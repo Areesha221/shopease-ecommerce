@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 1. Fetch products from our backend
-    fetch('http://localhost:3000/api/products')
+    fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products')
         .then(response => response.json()) // Turn the response into readable JSON
         .then(products => {
             // 2. Find the empty box we created in HTML

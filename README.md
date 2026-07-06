@@ -171,7 +171,7 @@ npm run dev
 node server.js
 ```
 
-Server will run on `http://localhost:3000`
+Server will run on `https://shopease-ecommerce-2ut5.onrender.com`
 
 ### **4. Frontend Setup**
 
@@ -213,7 +213,7 @@ FRONTEND_URL=http://localhost:5500
 
 ### **Base URL**
 ```
-http://localhost:3000/api
+https://shopease-ecommerce-2ut5.onrender.com/api
 ```
 
 ### **Authentication Endpoints**
@@ -437,7 +437,7 @@ Authorization: Bearer <token>
 After deploying backend, update frontend API calls:
 ```javascript
 // Change from:
-fetch('http://localhost:3000/api/products')
+fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products')
 
 // To:
 fetch('https://your-backend.onrender.com/api/products')

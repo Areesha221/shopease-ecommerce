@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        const response = await fetch('http://localhost:3000/api/orders/my-orders', {
+        const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/orders/my-orders', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }

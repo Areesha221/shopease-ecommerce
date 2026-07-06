@@ -13,7 +13,7 @@ async function loadWishlist() {
     }
 
     try {
-        const response = await fetch('http://localhost:3000/api/products');
+        const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products');
         const allProducts = await response.json();
 
         // Filter products that are in the wishlist

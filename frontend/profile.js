@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let pendingOrders = 0;
     
     try {
-        const ordersRes = await fetch('http://localhost:3000/api/orders/my-orders', {
+        const ordersRes = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/orders/my-orders', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }

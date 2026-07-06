@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load product details
 async function loadProductDetail(id) {
     try {
-        const response = await fetch(`http://localhost:3000/api/products/${id}`);
+        const response = await fetch(`https://shopease-ecommerce-2ut5.onrender.com/api/products/${id}`);
         
         if (!response.ok) {
             showToast('Product not found!', 'error');
@@ -212,7 +212,7 @@ function setupQuantityControls() {
 // Load related products
 async function loadRelatedProducts(category, currentId) {
     try {
-        const response = await fetch('http://localhost:3000/api/products');
+        const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products');
         const products = await response.json();
         
         const related = products.filter(p => p._id !== currentId).slice(0, 4);

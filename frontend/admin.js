@@ -1,5 +1,5 @@
-const API_URL = 'http://localhost:3000/api/products';
-const ORDERS_API = 'http://localhost:3000/api/orders';
+const API_URL = 'https://shopease-ecommerce-2ut5.onrender.com/api/products';
+const ORDERS_API = 'https://shopease-ecommerce-2ut5.onrender.com/api/orders';
 const productForm = document.getElementById('product-form');
 const productsList = document.getElementById('admin-products-list');
 const adminOrdersList = document.getElementById('admin-orders-list');
@@ -323,7 +323,7 @@ async function loadUsers() {
     const usersList = document.getElementById('admin-users-list');
     
     try {
-        const response = await fetch('http://localhost:3000/api/users', {
+        const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/users', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -380,7 +380,7 @@ window.viewUserDetails = async (userId) => {
     const token = localStorage.getItem('token');
     
     try {
-        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+        const response = await fetch(`https://shopease-ecommerce-2ut5.onrender.com/api/users/${userId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -460,7 +460,7 @@ window.toggleUserRole = async (userId, currentRole) => {
     if (!confirm(`Are you sure you want to make this user an ${newRole}?`)) return;
     
     try {
-        const response = await fetch(`http://localhost:3000/api/users/${userId}/role`, {
+        const response = await fetch(`https://shopease-ecommerce-2ut5.onrender.com/api/users/${userId}/role`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -488,7 +488,7 @@ window.deleteUser = async (userId) => {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
     
     try {
-        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+        const response = await fetch(`https://shopease-ecommerce-2ut5.onrender.com/api/users/${userId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });

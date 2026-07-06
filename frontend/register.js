@@ -24,7 +24,7 @@ if (registerForm) {
 
         // 4. Send to Backend
         try {
-            const response = await fetch('http://localhost:3000/api/auth/register', {
+            const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/auth/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

@@ -24,7 +24,7 @@ async function loadProducts() {
     showLoading(true);
 
     try {
-        const response = await fetch('http://localhost:3000/api/products');
+        const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products');
         allProducts = await response.json();
         filteredProducts = [...allProducts];
 
