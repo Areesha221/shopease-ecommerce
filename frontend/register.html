@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sign Up - ShopEase</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+            rel="stylesheet">
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="logo">Shop<span>Ease</span></div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li id="profile-link" style="display: none;"><a
+                        href="profile.html">Profile</a></li>
+                <li id="orders-link" style="display: none;"><a
+                        href="orders.html">Orders</a></li>
+                <li><a href="cart.html">Cart <i
+                            class="fas fa-shopping-cart"></i></a></li>
+                <li id="admin-link" style="display: none;">
+                    <a href="admin.html">Admin Dashboard <i
+                            class="fas fa-cog"></i></a>
+                </li>
+                <li id="auth-link"><a href="login.html">Login</a></li>
+
+            </ul>
+        </nav>
+
+        <!-- Register Container -->
+        <div class="login-container">
+            <div class="login-box">
+                <h2>Create Account</h2>
+                <p>Join ShopEase and start shopping!</p>
+
+                <form id="register-form">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="name" placeholder="Full Name"
+                            required>
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email"
+                            placeholder="Email Address" required>
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password"
+                            placeholder="Password" required>
+                        <i class="fas fa-eye" id="togglePassword"></i>
+                    </div>
+
+                    <!-- NEW: Confirm Password Field -->
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="confirmPassword"
+                            placeholder="Confirm Password" required>
+                        <i class="fas fa-eye" id="toggleConfirmPassword"></i>
+                    </div>
+
+                    <button type="submit" class="btn-primary login-btn">Sign
+                        Up</button>
+                </form>
+
+                <p class="switch-link">Already have an account? <a
+                        href="login.html">Login</a></p>
+            </div>
+        </div>
+
+        <!-- Professional Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Shop<span>Ease</span></h3>
+                    <p>Your one-stop destination for premium quality products at
+                        unbeatable prices.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="products.html">Products</a></li>
+                        <li><a href="cart.html">Cart</a></li>
+                        <li><a href="wishlist.html">Wishlist</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="profile.html">My Account</a></li>
+                        <li><a href="orders.html">Order History</a></li>
+                        <li><a href="#">Track Order</a></li>
+                        <li><a href="#">Returns & Refunds</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Contact Us</h4>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i>
+                            support@shopease.com</li>
+                        <li><i class="fas fa-phone"></i> +92 300 1234567</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Karachi,
+                            Pakistan</li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Newsletter</h4>
+                    <p>Subscribe for exclusive deals and updates!</p>
+                    <form class="newsletter-form"
+                        onsubmit="event.preventDefault(); showToast('Subscribed successfully!', 'success');">
+                        <input type="email" placeholder="Your email" required>
+                        <button type="submit"><i
+                                class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 ShopEase. All Rights Reserved. | <a
+                        href="#">Privacy Policy</a> | <a href="#">Terms of
+                        Service</a></p>
+            </div>
+        </footer>
+
+        <script src="register.js"></script>
+        <script src="script.js"></script>
+        <script src="toast.js"></script>
+    </body>
+</html>

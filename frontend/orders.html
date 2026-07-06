@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Orders - ShopEase</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+            rel="stylesheet">
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+
+        <nav class="navbar">
+            <div class="logo">Shop<span>Ease</span></div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li id="profile-link" style="display: none;"><a
+                        href="profile.html">Profile</a></li>
+                <li id="orders-link" style="display: none;"><a
+                        href="orders.html">Orders</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle-btn">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </li>
+                <div class="menu-toggle" id="mobile-menu">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </ul>
+        </nav>
+
+        <div class="orders-container">
+            <h1>My Order History</h1>
+            <div id="orders-list">
+                <!-- Orders will load here -->
+                <div class="loading-text">Loading your orders...</div>
+            </div>
+        </div>
+
+        <script src="toast.js"></script>
+        <script src="script.js"></script>
+        <script src="orders.js"></script>
+    </body>
+</html>

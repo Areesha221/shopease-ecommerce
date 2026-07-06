@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Product Detail - ShopEase</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+            rel="stylesheet">
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="logo">Shop<span>Ease</span></div>
+            <div class="menu-toggle" id="mobile-menu">
+                <i class="fas fa-bars"></i>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li id="profile-link" style="display: none;"><a
+                        href="profile.html">Profile</a></li>
+                <li id="orders-link" style="display: none;"><a
+                        href="orders.html">Orders</a></li>
+                <!-- Cart Link with Badge -->
+                <li>
+                    <a href="cart.html" class="cart-link">
+                        Cart
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cart-count" class="cart-badge">0</span>
+                    </a>
+                    <!-- Cart Preview Dropdown -->
+                    <div id="cart-preview" class="cart-preview-dropdown">
+                        <div class="cart-preview-header">
+                            <h4>Shopping Cart</h4>
+                            <span id="cart-preview-count">0 items</span>
+                        </div>
+                        <div id="cart-preview-items" class="cart-preview-items">
+                            <p class="empty-preview">Your cart is empty</p>
+                        </div>
+                        <div class="cart-preview-footer">
+                            <div class="preview-total">
+                                <span>Total:</span>
+                                <span id="preview-total-price">$0</span>
+                            </div>
+                            <a href="cart.html" class="btn-view-cart">View
+                                Cart</a>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Wishlist Link with Badge -->
+                <li>
+                    <a href="wishlist.html" class="wishlist-link">
+                        Wishlist
+                        <i class="fas fa-heart"></i>
+                        <span id="wishlist-count"
+                            class="wishlist-badge">0</span>
+                    </a>
+                </li>
+                <li id="admin-link" style="display: none;">
+                    <a href="admin.html">Admin <i class="fas fa-cog"></i></a>
+                </li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle-btn">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </li>
+                <li id="auth-link"><a href="login.html">Login</a></li>
+            </ul>
+        </nav>
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="index.html">Home</a> /
+            <a href="products.html">Products</a> /
+            <span id="breadcrumb-product">Product</span>
+        </div>
+
+        <!-- Product Detail Section -->
+        <section class="product-detail-section">
+            <div class="product-detail-container">
+
+                <!-- Product Image -->
+                <div class="product-detail-image">
+                    <div class="image-zoom-container">
+                        <img id="main-image" src alt="Product Image">
+                    </div>
+                    <div class="image-thumbnails">
+                        <img class="thumb active" id="thumb-1" src
+                            alt="Thumb 1">
+                        <img class="thumb" id="thumb-2" src alt="Thumb 2">
+                        <img class="thumb" id="thumb-3" src alt="Thumb 3">
+                    </div>
+                </div>
+
+                <!-- Product Info -->
+                <div class="product-detail-info">
+                    <span class="detail-category"
+                        id="detail-category">Category</span>
+                    <h1 id="detail-name">Product Name</h1>
+
+                    <!-- Rating -->
+                    <div class="detail-rating">
+                        <div class="stars">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                        <span class="review-count">(128 Reviews)</span>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="detail-price">
+                        <span class="current-price" id="detail-price">$0</span>
+                        <span class="original-price"
+                            id="detail-original-price">$0</span>
+                        <span class="discount-badge"
+                            id="detail-discount">-20%</span>
+                    </div>
+
+                    <!-- Description -->
+                    <p class="detail-description"
+                        id="detail-description">Product description goes
+                        here.</p>
+
+                    <!-- Stock Status -->
+                    <div class="stock-status" id="stock-status">
+                        <i class="fas fa-check-circle"></i>
+                        <span>In Stock</span>
+                    </div>
+
+                    <!-- Quantity Selector -->
+                    <div class="quantity-selector">
+                        <label>Quantity:</label>
+                        <div class="quantity-controls">
+                            <button type="button" id="qty-minus"><i
+                                    class="fas fa-minus"></i></button>
+                            <input type="number" id="quantity" value="1" min="1"
+                                max="10" readonly>
+                            <button type="button" id="qty-plus"><i
+                                    class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="detail-actions">
+                        <button class="btn-add-cart" id="btn-add-cart">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                        <button class="btn-buy-now" id="btn-buy-now">
+                            <i class="fas fa-bolt"></i> Buy Now
+                        </button>
+                        <button class="btn-wishlist-detail" id="btn-wishlist">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+
+                    <!-- Product Features -->
+                    <div class="product-features">
+                        <div class="feature-item">
+                            <i class="fas fa-truck"></i>
+                            <span>Free Shipping</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-undo"></i>
+                            <span>30-Day Returns</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>2-Year Warranty</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reviews Section -->
+        <section class="reviews-section">
+            <h2>Customer Reviews</h2>
+            <div class="reviews-container" id="reviews-container">
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="reviewer-avatar">A</div>
+                        <div class="reviewer-info">
+                            <h4>Ahmed Khan</h4>
+                            <div class="review-stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                        <span class="review-date">2 days ago</span>
+                    </div>
+                    <p class="review-text">Amazing product! Quality is top-notch
+                        and delivery was super fast. Highly recommended!</p>
+                </div>
+                <div class="review-card">
+                    <div class="review-header">
+                        <div class="reviewer-avatar">S</div>
+                        <div class="reviewer-info">
+                            <h4>Sara Ali</h4>
+                            <div class="review-stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="far fa-star"></i>
+                            </div>
+                        </div>
+                        <span class="review-date">1 week ago</span>
+                    </div>
+                    <p class="review-text">Great value for money. The product
+                        looks exactly like the pictures. Will buy again!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Related Products -->
+        <section class="related-products">
+            <h2>Related Products</h2>
+            <div class="products-container" id="related-products"></div>
+        </section>
+
+        <!-- Professional Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Shop<span>Ease</span></h3>
+                    <p>Your one-stop destination for premium quality products at
+                        unbeatable prices.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="products.html">Products</a></li>
+                        <li><a href="cart.html">Cart</a></li>
+                        <li><a href="wishlist.html">Wishlist</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Customer Service</h4>
+                    <ul>
+                        <li><a href="profile.html">My Account</a></li>
+                        <li><a href="orders.html">Order History</a></li>
+                        <li><a href="#">Track Order</a></li>
+                        <li><a href="#">Returns & Refunds</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Contact Us</h4>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i>
+                            support@shopease.com</li>
+                        <li><i class="fas fa-phone"></i> +92 300 1234567</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Karachi,
+                            Pakistan</li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Newsletter</h4>
+                    <p>Subscribe for exclusive deals and updates!</p>
+                    <form class="newsletter-form"
+                        onsubmit="event.preventDefault(); showToast('Subscribed successfully!', 'success');">
+                        <input type="email" placeholder="Your email" required>
+                        <button type="submit"><i
+                                class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 ShopEase. All Rights Reserved. | <a
+                        href="#">Privacy Policy</a> | <a href="#">Terms of
+                        Service</a></p>
+            </div>
+        </footer>
+
+        <script src="toast.js"></script>
+        <script src="script.js"></script>
+        <script src="product-detail.js"></script>
+    </body>
+</html>
