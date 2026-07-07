@@ -28,20 +28,33 @@ const getProductById = async (req, res) => {
 const createProduct = async (req, res) => {
     try {
         const { name, description, price, category, image, stock } = req.body;
-
-        const newProduct = await Product.create({
+        
+        // Debug logs
+        console.log('Received data:', req.body);
+        console.log('Image URL:', image);
+        
+        const product = new Product({
             name,
             description,
             price,
             category,
-            image,
-            stock
+            image: image || 'https://via.placeholder.com/300', // Default image
+            stock,
+            user: req.user._id
         });
-
-        res.status(201).json(newProduct);
+        
+        await product.save();
+        
+        res.status(201).json({
+            success: true,
+            product
+        });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error creating product:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
     }
 };
 

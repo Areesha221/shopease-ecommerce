@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadProductDetail(id) {
     try {
         const response = await fetch(`https://shopease-ecommerce-2ut5.onrender.com/api/products/${id}`);
-        
+
         if (!response.ok) {
             showToast('Product not found!', 'error');
             setTimeout(() => window.location.href = 'products.html', 2000);
@@ -43,11 +43,11 @@ function displayProductDetail(product) {
     document.getElementById('detail-category').textContent = product.category;
     document.getElementById('detail-price').textContent = `$${product.price}`;
     document.getElementById('detail-description').textContent = product.description;
-    
+
     // Set original price (20% higher for discount display)
     const originalPrice = Math.round(product.price * 1.2);
     document.getElementById('detail-original-price').textContent = `$${originalPrice}`;
-    
+
     // Stock status
     const stockStatus = document.getElementById('stock-status');
     if (product.stock > 0) {
@@ -67,7 +67,7 @@ function displayProductDetail(product) {
     // Image zoom effect
     const mainImage = document.getElementById('main-image');
     const zoomContainer = document.querySelector('.image-zoom-container');
-    
+
     zoomContainer.addEventListener('mousemove', (e) => {
         const rect = zoomContainer.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -83,18 +83,18 @@ function displayProductDetail(product) {
     // Add to Cart button
     document.getElementById('btn-add-cart').addEventListener('click', () => {
         const quantity = parseInt(document.getElementById('quantity').value);
-        
+
         // Check if quantity exceeds stock
         if (quantity > product.stock) {
             showToast(`Only ${product.stock} items available in stock`, 'error');
             return;
         }
-        
+
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        
+
         // Check if product already exists in cart
         const existingItem = cart.find(item => item._id === product._id);
-        
+
         if (existingItem) {
             const newTotal = (existingItem.quantity || 1) + quantity;
             if (newTotal > product.stock) {
@@ -111,9 +111,9 @@ function displayProductDetail(product) {
                 quantity: quantity
             });
         }
-        
+
         localStorage.setItem('cart', JSON.stringify(cart));
-        
+
         // Update cart badge
         if (typeof updateCartCount === 'function') {
             updateCartCount();
@@ -123,13 +123,13 @@ function displayProductDetail(product) {
     // ✅ BUY NOW BUTTON - FIXED
     document.querySelector('.btn-buy-now').addEventListener('click', () => {
         const quantity = parseInt(document.getElementById('quantity').value);
-        
+
         // Check if quantity exceeds stock
         if (quantity > product.stock) {
             showToast(`Only ${product.stock} items available in stock`, 'error');
             return;
         }
-        
+
         // Create buy now item
         const buyNowItem = {
             _id: product._id,
@@ -139,10 +139,10 @@ function displayProductDetail(product) {
             quantity: quantity,
             buyNow: true
         };
-        
+
         // Save to localStorage
         localStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
-        
+
         // Redirect to checkout
         window.location.href = 'checkout.html';
     });
@@ -151,7 +151,7 @@ function displayProductDetail(product) {
     document.getElementById('btn-wishlist').addEventListener('click', () => {
         let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
         const index = wishlist.indexOf(product._id);
-        
+
         if (index > -1) {
             wishlist.splice(index, 1);
             showToast('Removed from wishlist', 'info');
@@ -161,9 +161,9 @@ function displayProductDetail(product) {
             showToast('Added to wishlist! ❤️', 'success');
             document.getElementById('btn-wishlist').innerHTML = '<i class="fas fa-heart" style="color: #ff4d4d;"></i>';
         }
-        
+
         localStorage.setItem('wishlist', JSON.stringify(wishlist));
-        
+
         // Update wishlist badge
         if (typeof updateWishlistCount === 'function') {
             updateWishlistCount();
@@ -176,27 +176,26 @@ function displayProductDetail(product) {
 
 // Setup quantity controls
 function setupQuantityControls() {
-    const qtyInput = document.getElementById('quantity');
-    const minusBtn = document.getElementById('qty-minus');
-    const plusBtn = document.getElementById('qty-plus');
+    // Quantity buttons - Event delegation use karo
+    const quantityContainer = document.querySelector('.quantity');
 
-    if (!qtyInput || !minusBtn || !plusBtn) return;
+    if (quantityContainer) {
+        quantityContainer.addEventListener('click', (e) => {
+            const quantityInput = document.querySelector('.quantity-input');
 
-    minusBtn.addEventListener('click', () => {
-        let val = parseInt(qtyInput.value) || 1;
-        if (val > 1) {
-            qtyInput.value = val - 1;
-        }
-    });
+            if (e.target.classList.contains('minus')) {
+                let currentValue = parseInt(quantityInput.value) || 1;
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                }
+            }
 
-    plusBtn.addEventListener('click', () => {
-        let val = parseInt(qtyInput.value) || 1;
-        if (product && val < product.stock) {
-            qtyInput.value = val + 1;
-        } else if (product) {
-            showToast(`Only ${product.stock} items available`, 'warning');
-        }
-    });
+            if (e.target.classList.contains('plus')) {
+                let currentValue = parseInt(quantityInput.value) || 1;
+                quantityInput.value = currentValue + 1;
+            }
+        });
+    }
 
     qtyInput.addEventListener('change', () => {
         let val = parseInt(qtyInput.value);
@@ -214,7 +213,7 @@ async function loadRelatedProducts(category, currentId) {
     try {
         const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products');
         const products = await response.json();
-        
+
         const related = products.filter(p => p._id !== currentId).slice(0, 4);
         const container = document.getElementById('related-products');
         container.innerHTML = '';

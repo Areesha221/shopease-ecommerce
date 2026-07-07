@@ -1,32 +1,64 @@
-const API_URL = 'https://shopease-ecommerce-2ut5.onrender.com/api/products';
-const ORDERS_API = 'https://shopease-ecommerce-2ut5.onrender.com/api/orders';
-const productForm = document.getElementById('product-form');
-const productsList = document.getElementById('admin-products-list');
-const adminOrdersList = document.getElementById('admin-orders-list');
+const API_URL = 'https://shopease-ecommerce-2ut5.onrender.com/api';
+const token = localStorage.getItem('token');
 
-// Helper function to get headers with Token
+// Helper function to get headers
 function getHeaders() {
-    const token = localStorage.getItem('token');
     return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
 }
 
-// 1. Fetch and Display Products
+// Predefined Categories
+const categories = [
+    'Electronics',
+    'Fashion',
+    'Home & Kitchen',
+    'Books',
+    'Sports',
+    'Beauty',
+    'Toys',
+    'Other'
+];
+
+// Initialize Category Dropdown
+function initCategoryDropdown() {
+    const categorySelect = document.getElementById('category');
+    if (categorySelect) {
+        categorySelect.innerHTML = '<option value="">Select Category</option>';
+        categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            categorySelect.appendChild(option);
+        });
+    }
+}
+
+// 1. Load Products
 async function loadProducts() {
+    const productsList = document.getElementById('admin-products-list');
+    if (!productsList) return;
+
     try {
-        const response = await fetch(API_URL);
+        const response = await fetch(`${API_URL}/products`);
         const products = await response.json();
-        
+
         productsList.innerHTML = '';
+        
+        if (products.length === 0) {
+            productsList.innerHTML = '<p class="empty-text">No products yet. Add your first product!</p>';
+            return;
+        }
+
         products.forEach(product => {
             const item = document.createElement('div');
             item.className = 'admin-product-item';
             item.innerHTML = `
-                <img src="${product.image}" alt="${product.name}">
+                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/100'">
                 <div class="product-info">
                     <h4>${product.name}</h4>
+                    <p class="product-category"><i class="fas fa-tag"></i> ${product.category}</p>
                     <p>$${product.price} | Stock: ${product.stock}</p>
                 </div>
                 <div class="product-actions">
@@ -42,53 +74,71 @@ async function loadProducts() {
         });
     } catch (error) {
         console.error('Error loading products:', error);
+        productsList.innerHTML = '<p class="error-text">Failed to load products</p>';
     }
 }
 
 // 2. Add or Update Product
-productForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const id = document.getElementById('product-id').value;
-    const productData = {
-        name: document.getElementById('name').value,
-        description: document.getElementById('description').value,
-        price: document.getElementById('price').value,
-        stock: document.getElementById('stock').value,
-        category: document.getElementById('category').value,
-        image: document.getElementById('image').value
-    };
+const productForm = document.getElementById('product-form');
+if (productForm) {
+    productForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-    try {
-        let response;
-        if (id) {
-            response = await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: getHeaders(),
-                body: JSON.stringify(productData)
-            });
-        } else {
-            response = await fetch(API_URL, {
-                method: 'POST',
-                headers: getHeaders(),
-                body: JSON.stringify(productData)
-            });
+        const id = document.getElementById('product-id').value;
+        const productData = {
+            name: document.getElementById('name').value.trim(),
+            description: document.getElementById('description').value.trim(),
+            price: parseFloat(document.getElementById('price').value),
+            stock: parseInt(document.getElementById('stock').value),
+            category: document.getElementById('category').value,
+            image: document.getElementById('image').value.trim() || 'https://via.placeholder.com/300'
+        };
+
+        // Validation
+        if (!productData.name || !productData.description || !productData.category) {
+            showToast('Please fill all required fields', 'error');
+            return;
         }
 
-        if (response.ok) {
-            alert(id ? 'Product Updated!' : 'Product Added!');
-            resetForm();
-            loadProducts();
-            loadAdminStats(); // Refresh stats
-        } else {
+        if (!token) {
+            showToast('Please login as admin first', 'error');
+            return;
+        }
+
+        try {
+            let response;
+            if (id) {
+                // Update
+                response = await fetch(`${API_URL}/products/${id}`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify(productData)
+                });
+            } else {
+                // Create
+                response = await fetch(`${API_URL}/products`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(productData)
+                });
+            }
+
             const data = await response.json();
-            alert(data.message || 'Failed. Are you logged in as Admin?');
+
+            if (response.ok) {
+                showToast(id ? 'Product Updated!' : 'Product Added!', 'success');
+                resetForm();
+                loadProducts();
+                loadAdminStats();
+            } else {
+                showToast(data.message || 'Failed. Check admin access!', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Server error!', 'error');
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Server error!');
-    }
-});
+    });
+}
 
 // 3. Edit Product
 window.editProduct = (id, name, description, price, stock, category, image) => {
@@ -99,7 +149,7 @@ window.editProduct = (id, name, description, price, stock, category, image) => {
     document.getElementById('stock').value = stock;
     document.getElementById('category').value = category;
     document.getElementById('image').value = image;
-    
+
     document.getElementById('form-title').innerText = 'Edit Product';
     document.getElementById('submit-btn').innerText = 'Update Product';
     document.getElementById('cancel-btn').style.display = 'inline-block';
@@ -108,117 +158,136 @@ window.editProduct = (id, name, description, price, stock, category, image) => {
 
 // 4. Delete Product
 window.deleteProduct = async (id) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-        try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE',
-                headers: getHeaders()
-            });
-            
-            if (response.ok) {
-                alert('Product Deleted!');
-                loadProducts();
-                loadAdminStats();
-            } else {
-                alert('Failed to delete. Check admin access!');
-            }
-        } catch (error) {
-            console.error('Error:', error);
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+        const response = await fetch(`${API_URL}/products/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+
+        if (response.ok) {
+            showToast('Product Deleted!', 'success');
+            loadProducts();
+            loadAdminStats();
+        } else {
+            showToast('Failed to delete', 'error');
         }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Server error!', 'error');
     }
 };
 
 // 5. Reset Form
 function resetForm() {
-    productForm.reset();
+    if (productForm) {
+        productForm.reset();
+    }
     document.getElementById('product-id').value = '';
     document.getElementById('form-title').innerText = 'Add New Product';
     document.getElementById('submit-btn').innerText = 'Add Product';
     document.getElementById('cancel-btn').style.display = 'none';
 }
 
-document.getElementById('cancel-btn').addEventListener('click', resetForm);
+const cancelBtn = document.getElementById('cancel-btn');
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', resetForm);
+}
 
-// ===== ADMIN STATS & ORDERS (FIXED) =====
+// ===== ADMIN STATS =====
 async function loadAdminStats() {
-    const token = localStorage.getItem('token');
-    
+    if (!token) return;
+
     try {
         // Fetch stats
-        const statsRes = await fetch(`${ORDERS_API}/stats/admin`, {
+        const statsRes = await fetch(`${API_URL}/orders/stats/admin`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (statsRes.ok) {
             const stats = await statsRes.json();
-            document.getElementById('total-products-count').innerText = stats.totalProducts;
-            document.getElementById('total-orders-count').innerText = stats.totalOrders;
-            document.getElementById('total-users-count').innerText = stats.totalUsers;
-            document.getElementById('total-revenue').innerText = `$${stats.totalRevenue.toFixed(2)}`;
+            const totalProductsEl = document.getElementById('total-products-count');
+            const totalOrdersEl = document.getElementById('total-orders-count');
+            const totalUsersEl = document.getElementById('total-users-count');
+            const totalRevenueEl = document.getElementById('total-revenue');
+
+            if (totalProductsEl) totalProductsEl.innerText = stats.totalProducts || 0;
+            if (totalOrdersEl) totalOrdersEl.innerText = stats.totalOrders || 0;
+            if (totalUsersEl) totalUsersEl.innerText = stats.totalUsers || 0;
+            if (totalRevenueEl) totalRevenueEl.innerText = `$${(stats.totalRevenue || 0).toFixed(2)}`;
         }
 
-        // Load recent orders
-        const ordersRes = await fetch(ORDERS_API, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (ordersRes.ok) {
-            const orders = await ordersRes.json();
-            
-            if (orders.length === 0) {
-                adminOrdersList.innerHTML = '<p class="empty-text">No orders yet.</p>';
-            } else {
-                adminOrdersList.innerHTML = orders.map(order => `
-                    <div class="admin-order-item">
-                        <div class="order-info">
-                            <strong>#${order._id.substring(0, 8).toUpperCase()}</strong>
-                            <p>${order.customer?.fullName || 'Guest'}</p>
-                            <p style="font-size: 0.8rem; color: var(--text-secondary);">
-                                ${order.customer?.email || 'No email'} | ${order.customer?.phone || 'No phone'}
-                            </p>
-                            <small>${new Date(order.orderDate).toLocaleString()}</small>
-                        </div>
-                        <div class="order-details">
-                            <span class="order-items-count">${order.items.length} item(s)</span>
-                            <span class="order-amount">$${order.totals?.total || 0}</span>
-                            <select class="status-select" onchange="updateOrderStatus('${order._id}', this.value)">
-                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
-                                <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
-                                <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
-                                <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-                            </select>
-                            <button class="btn-view-order" onclick="viewOrderDetails('${order._id}')">
-                                <i class="fas fa-eye"></i> View
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-        }
+        // Load orders
+        await loadOrders();
     } catch (error) {
-        console.error('Error loading admin stats:', error);
-        adminOrdersList.innerHTML = '<p class="error-text">Failed to load orders. Please refresh.</p>';
+        console.error('Error loading stats:', error);
     }
 }
 
-// Update order status
-window.updateOrderStatus = async (orderId, newStatus) => {
-    const token = localStorage.getItem('token');
-    
+// Load Orders
+async function loadOrders() {
+    const adminOrdersList = document.getElementById('admin-orders-list');
+    if (!adminOrdersList) return;
+
     try {
-        const response = await fetch(`${ORDERS_API}/${orderId}/status`, {
+        const ordersRes = await fetch(`${API_URL}/orders`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (ordersRes.ok) {
+            const orders = await ordersRes.json();
+
+            if (orders.length === 0) {
+                adminOrdersList.innerHTML = '<p class="empty-text">No orders yet.</p>';
+                return;
+            }
+
+            adminOrdersList.innerHTML = orders.map(order => `
+                <div class="admin-order-item">
+                    <div class="order-info">
+                        <strong>#${order._id.substring(0, 8).toUpperCase()}</strong>
+                        <p>${order.customer?.fullName || 'Guest'}</p>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                            ${order.customer?.email || 'No email'} | ${order.customer?.phone || 'No phone'}
+                        </p>
+                        <small>${new Date(order.orderDate).toLocaleString()}</small>
+                    </div>
+                    <div class="order-details">
+                        <span class="order-items-count">${order.items.length} item(s)</span>
+                        <span class="order-amount">$${order.totals?.total || 0}</span>
+                        <select class="status-select" onchange="updateOrderStatus('${order._id}', this.value)">
+                            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
+                            <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                        <button class="btn-view-order" onclick="viewOrderDetails('${order._id}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        adminOrdersList.innerHTML = '<p class="error-text">Failed to load orders</p>';
+    }
+}
+
+// Update Order Status
+window.updateOrderStatus = async (orderId, newStatus) => {
+    try {
+        const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: getHeaders(),
             body: JSON.stringify({ status: newStatus })
         });
-        
+
         if (response.ok) {
             showToast(`Order status updated to ${newStatus}`, 'success');
-            loadAdminStats(); // Refresh stats (revenue will update if cancelled)
+            loadAdminStats();
         } else {
             showToast('Failed to update status', 'error');
         }
@@ -228,15 +297,13 @@ window.updateOrderStatus = async (orderId, newStatus) => {
     }
 };
 
-// View order details
+// View Order Details
 window.viewOrderDetails = async (orderId) => {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${ORDERS_API}/${orderId}`, {
+        const response = await fetch(`${API_URL}/orders/${orderId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
             const order = await response.json();
             showOrderModal(order);
@@ -246,7 +313,7 @@ window.viewOrderDetails = async (orderId) => {
     }
 };
 
-// Show order details modal
+// Show Order Modal
 function showOrderModal(order) {
     const modal = document.createElement('div');
     modal.className = 'order-modal';
@@ -272,7 +339,7 @@ function showOrderModal(order) {
                     <h3>Items Ordered</h3>
                     ${order.items.map(item => `
                         <div class="modal-item">
-                            <img src="${item.image}" alt="${item.name}">
+                            <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/50'">
                             <div class="modal-item-info">
                                 <h4>${item.name}</h4>
                                 <p>Quantity: ${item.quantity} x $${item.price}</p>
@@ -306,35 +373,29 @@ function showOrderModal(order) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('show'), 10);
 }
 
-// Load on page load
-document.addEventListener('DOMContentLoaded', () => {
-    loadProducts();
-    loadAdminStats();
-});
-
 // ===== USER MANAGEMENT =====
 async function loadUsers() {
-    const token = localStorage.getItem('token');
     const usersList = document.getElementById('admin-users-list');
-    
+    if (!usersList || !token) return;
+
     try {
-        const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/users', {
+        const response = await fetch(`${API_URL}/users`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
             const users = await response.json();
-            
+
             if (users.length === 0) {
                 usersList.innerHTML = '<p class="empty-text">No users found.</p>';
                 return;
             }
-            
+
             usersList.innerHTML = `
                 <div class="users-table">
                     <div class="users-table-header">
@@ -345,7 +406,7 @@ async function loadUsers() {
                         <span>Actions</span>
                     </div>
                     ${users.map(user => `
-                        <div class="users-table-row" onclick="viewUserDetails('${user._id}')">
+                        <div class="users-table-row">
                             <span><strong>${user.name}</strong></span>
                             <span>${user.email}</span>
                             <span>
@@ -355,14 +416,18 @@ async function loadUsers() {
                             </span>
                             <span>${new Date(user.createdAt || Date.now()).toLocaleDateString()}</span>
                             <span class="user-actions">
-                                <button class="btn-view-user" onclick="event.stopPropagation(); viewUserDetails('${user._id}')">
+                                <button class="btn-view-user" onclick="viewUserDetails('${user._id}')">
                                     <i class="fas fa-eye"></i> View
                                 </button>
                                 ${user.role !== 'admin' ? `
-                                    <button class="btn-delete-user" onclick="event.stopPropagation(); deleteUser('${user._id}')">
+                                    <button class="btn-toggle-role" onclick="toggleUserRole('${user._id}', '${user.role}')">
+                                        <i class="fas fa-user-shield"></i>
+                                        ${user.role === 'user' ? 'Make Admin' : 'Make User'}
+                                    </button>
+                                    <button class="btn-delete-user" onclick="deleteUser('${user._id}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
-                                ` : ''}
+                                ` : '<span class="info-text">Cannot modify</span>'}
                             </span>
                         </div>
                     `).join('')}
@@ -375,15 +440,13 @@ async function loadUsers() {
     }
 }
 
-// View user details
+// View User Details
 window.viewUserDetails = async (userId) => {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`https://shopease-ecommerce-2ut5.onrender.com/api/users/${userId}`, {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
             const user = await response.json();
             showUserModal(user);
@@ -393,7 +456,7 @@ window.viewUserDetails = async (userId) => {
     }
 };
 
-// Show user modal
+// Show User Modal
 function showUserModal(user) {
     const modal = document.createElement('div');
     modal.className = 'order-modal';
@@ -432,43 +495,27 @@ function showUserModal(user) {
                         </div>
                     </div>
                 </div>
-                
-                <div class="modal-section">
-                    <h3>Account Actions</h3>
-                    <div class="user-action-buttons">
-                        ${user.role !== 'admin' ? `
-                            <button class="btn-toggle-role" onclick="toggleUserRole('${user._id}', '${user.role}')">
-                                <i class="fas fa-user-shield"></i> 
-                                ${user.role === 'user' ? 'Make Admin' : 'Make User'}
-                            </button>
-                        ` : '<p class="info-text">Cannot modify admin accounts</p>'}
-                    </div>
-                </div>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('show'), 10);
 }
 
-// Toggle user role
+// Toggle User Role
 window.toggleUserRole = async (userId, currentRole) => {
-    const token = localStorage.getItem('token');
     const newRole = currentRole === 'user' ? 'admin' : 'user';
-    
+
     if (!confirm(`Are you sure you want to make this user an ${newRole}?`)) return;
-    
+
     try {
-        const response = await fetch(`https://shopease-ecommerce-2ut5.onrender.com/api/users/${userId}/role`, {
+        const response = await fetch(`${API_URL}/users/${userId}/role`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: getHeaders(),
             body: JSON.stringify({ role: newRole })
         });
-        
+
         if (response.ok) {
             showToast(`User role updated to ${newRole}`, 'success');
             loadUsers();
@@ -481,18 +528,16 @@ window.toggleUserRole = async (userId, currentRole) => {
     }
 };
 
-// Delete user
+// Delete User
 window.deleteUser = async (userId) => {
-    const token = localStorage.getItem('token');
-    
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    
+
     try {
-        const response = await fetch(`https://shopease-ecommerce-2ut5.onrender.com/api/users/${userId}`, {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
             showToast('User deleted successfully', 'success');
             loadUsers();
@@ -506,9 +551,10 @@ window.deleteUser = async (userId) => {
     }
 };
 
-// Update DOMContentLoaded
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    initCategoryDropdown();
     loadProducts();
     loadAdminStats();
-    loadUsers(); // Add this line
+    loadUsers();
 });

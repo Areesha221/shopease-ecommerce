@@ -67,11 +67,15 @@
             </div>
 
             <!-- Users Management Section -->
-            <div class="admin-box">
-                <h3>User Management</h3>
-                <div id="admin-users-list">
-                    <p>Loading users...</p>
-                </div>
+            <div class="user-role-form">
+                <select class="role-select" data-user-id="${user._id}">
+                    <option value="user" ${user.role === 'user' ? 'selected' :
+                        ''}>User</option>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' :
+                        ''}>Admin</option>
+                </select>
+                <button class="update-role-btn"
+                    data-user-id="${user._id}">Update</button>
             </div>
 
             <!-- Add this after the Manage Products box -->
@@ -101,10 +105,20 @@
                             required>
                     </div>
                     <div class="input-row">
-                        <input type="text" id="category" placeholder="Category"
-                            required>
-                        <input type="text" id="image" placeholder="Image URL"
-                            required>
+                        <select id="category" required>
+                            <option value>Select Category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Fashion">Fashion</option>
+                            <option value="Home & Kitchen">Home &
+                                Kitchen</option>
+                            <option value="Books">Books</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Beauty">Beauty</option>
+                            <option value="Toys">Toys</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <input type="text" id="image"
+                            placeholder="Image URL (https://...)" required>
                     </div>
                     <button type="submit" class="btn-primary"
                         id="submit-btn">Add Product</button>
