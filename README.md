@@ -7,6 +7,11 @@ A full-stack, production-ready e-commerce web application built with the MERN st
 ![Node](https://img.shields.io/badge/Node.js-v14+-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
 
+## 🌐 Live Demo
+
+- **Frontend:** https://shopease-ecommerce-iota.vercel.app
+- **Backend API:** https://shopease-ecommerce-2ut5.onrender.com
+
 ## 🌟 Features
 
 ### 👤 **User Features**
@@ -23,10 +28,11 @@ A full-stack, production-ready e-commerce web application built with the MERN st
 
 ### 🛠️ **Admin Features**
 - ✅ **Dashboard Analytics** - Real-time stats (Products, Orders, Users, Revenue)
-- ✅ **Product Management** - Full CRUD operations
+- ✅ **Product Management** - Full CRUD operations with category dropdown
 - ✅ **Order Management** - View, update status (Pending → Processing → Shipped → Delivered)
 - ✅ **User Management** - View all users, delete users, change roles (User ↔ Admin)
 - ✅ **Revenue Tracking** - Automatic calculation (excludes cancelled orders)
+- ✅ **Category Dropdown** - Predefined categories for easy product management
 
 ### 🎨 **UI/UX Features**
 - ✅ **Responsive Design** - Mobile, tablet, desktop optimized
@@ -70,7 +76,8 @@ ecommerce-store/
 │   ├── controllers/
 │   │   ├── authController.js
 │   │   ├── orderController.js
-│   │   └── productController.js
+│   │   ├── productController.js
+│   │   └── userController.js
 │   ├── middleware/
 │   │   └── auth.js
 │   ├── models/
@@ -82,7 +89,7 @@ ecommerce-store/
 │   │   ├── orderRoutes.js
 │   │   ├── productRoutes.js
 │   │   └── userRoutes.js
-│   ├── .env
+│   ├── .env (not included in repo)
 │   ├── package.json
 │   ├── server.js
 │   └── test-db.js
@@ -108,7 +115,6 @@ ecommerce-store/
 │   ├── product-detail.js
 │   ├── products.js
 │   └── toast.js
-├── .env
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -156,11 +162,11 @@ cd backend
 # Install dependencies
 npm install
 
-# Create .env file
-echo PORT=3000 > .env
-echo MONGO_URI=your_mongodb_connection_string >> .env
-echo JWT_SECRET=your_super_secret_key >> .env
-echo FRONTEND_URL=http://localhost:5500 >> .env
+# Create .env file with following variables
+# PORT=3000
+# MONGO_URI=your_mongodb_connection_string
+# JWT_SECRET=your_super_secret_key
+# FRONTEND_URL=https://your-frontend-url.vercel.app
 
 # Test database connection
 node test-db.js
@@ -171,7 +177,7 @@ npm run dev
 node server.js
 ```
 
-Server will run on `https://shopease-ecommerce-2ut5.onrender.com`
+Server will run on `http://localhost:3000`
 
 ### **4. Frontend Setup**
 
@@ -200,7 +206,7 @@ MONGO_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/shopease?re
 JWT_SECRET=your_very_secret_key_here_make_it_long_and_random
 
 # Frontend URL (for CORS)
-FRONTEND_URL=http://localhost:5500
+FRONTEND_URL=https://your-frontend-url.vercel.app
 ```
 
 **Important Notes:**
@@ -377,6 +383,12 @@ GET /api/users
 Authorization: Bearer <token>
 ```
 
+#### Get User by ID
+```http
+GET /api/users/:id
+Authorization: Bearer <token>
+```
+
 #### Update User Role
 ```http
 PUT /api/users/:id/role
@@ -402,6 +414,7 @@ Authorization: Bearer <token>
 - ✅ CORS enabled for specific origins
 - ✅ Environment variables for sensitive data
 - ✅ Input validation and sanitization
+- ✅ `.env` file excluded from Git repository
 
 ## 📱 Responsive Design
 
@@ -437,7 +450,7 @@ Authorization: Bearer <token>
 After deploying backend, update frontend API calls:
 ```javascript
 // Change from:
-fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products')
+fetch('http://localhost:3000/api/products')
 
 // To:
 fetch('https://your-backend.onrender.com/api/products')

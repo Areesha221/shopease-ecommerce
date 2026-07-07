@@ -34,12 +34,9 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'Please add stock quantity'],
         min: [0, 'Stock cannot be negative']
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    timestamps: true
+    }
+}, {
+    timestamps: true  // ✅ SAHI - Second argument mein hai!
 });
 
 module.exports = mongoose.model('Product', productSchema);
