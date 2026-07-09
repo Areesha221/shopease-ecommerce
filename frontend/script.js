@@ -35,80 +35,84 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ordersLink) ordersLink.style.display = 'none';
     }
 
-    // 1. Fetch products from our backend
-    fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products')
-        .then(response => response.json())
-        .then(products => {
-            const container = document.getElementById('products-container');
+    // ✅ FIX: Sirf home page par products load karo
+    const productsContainer = document.getElementById('products-container');
 
-            products.forEach(product => {
-                const card = document.createElement('div');
-                card.className = 'product-card reveal';
+    if (productsContainer) {
+        // 1. Fetch products from our backend
+        fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products')
+            .then(response => response.json())
+            .then(products => {
 
-                card.innerHTML = `
-                    <img src="${product.image}" alt="${product.name}">
-                    <div class="card-body">
-                        <h3>${product.name}</h3>
-                        <p>${product.description}</p>
-                        <div class="price">$${product.price}</div>
-                        <button class="add-to-cart">Add to Cart</button>
-                    </div>
-                `;
+                products.forEach(product => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card reveal';
 
-                container.appendChild(card);
+                    card.innerHTML = `
+                        <img src="${product.image}" alt="${product.name}">
+                        <div class="card-body">
+                            <h3>${product.name}</h3>
+                            <p>${product.description}</p>
+                            <div class="price">$${product.price}</div>
+                            <button class="add-to-cart">Add to Cart</button>
+                        </div>
+                    `;
 
-                const addToCartBtn = card.querySelector('.add-to-cart');
-                addToCartBtn.addEventListener('click', () => {
-                    let cartData = localStorage.getItem('cart');
-                    let cart = [];
+                    productsContainer.appendChild(card);
 
-                    try {
-                        cart = cartData ? JSON.parse(cartData) : [];
-                        if (!Array.isArray(cart)) {
+                    const addToCartBtn = card.querySelector('.add-to-cart');
+                    addToCartBtn.addEventListener('click', () => {
+                        let cartData = localStorage.getItem('cart');
+                        let cart = [];
+
+                        try {
+                            cart = cartData ? JSON.parse(cartData) : [];
+                            if (!Array.isArray(cart)) {
+                                cart = [];
+                            }
+                        } catch (error) {
+                            console.error('Error parsing cart:', error);
                             cart = [];
                         }
-                    } catch (error) {
-                        console.error('Error parsing cart:', error);
-                        cart = [];
-                    }
 
-                    // Check if product already exists
-                    const existingItem = cart.find(item => item._id === product._id);
+                        // Check if product already exists
+                        const existingItem = cart.find(item => item._id === product._id);
 
-                    if (existingItem) {
-                        existingItem.quantity = (parseInt(existingItem.quantity) || 1) + 1;
-                    } else {
-                        cart.push({
-                            _id: product._id,
-                            name: product.name,
-                            price: product.price,
-                            image: product.image,
-                            quantity: 1
-                        });
-                    }
+                        if (existingItem) {
+                            existingItem.quantity = (parseInt(existingItem.quantity) || 1) + 1;
+                        } else {
+                            cart.push({
+                                _id: product._id,
+                                name: product.name,
+                                price: product.price,
+                                image: product.image,
+                                quantity: 1
+                            });
+                        }
 
-                    localStorage.setItem('cart', JSON.stringify(cart));
+                        localStorage.setItem('cart', JSON.stringify(cart));
 
-                    // ✅ Update cart count
-                    if (typeof updateCartCount === 'function') {
-                        updateCartCount();
-                    }
+                        // ✅ Update cart count
+                        if (typeof updateCartCount === 'function') {
+                            updateCartCount();
+                        }
 
-                    // Show toast instead of alert
-                    if (typeof showToast === 'function') {
-                        showToast(`${product.name} added to cart!`, 'success');
-                    } else {
-                        alert(`${product.name} added to cart!`);
-                    }
+                        // Show toast instead of alert
+                        if (typeof showToast === 'function') {
+                            showToast(`${product.name} added to cart!`, 'success');
+                        } else {
+                            alert(`${product.name} added to cart!`);
+                        }
+                    });
                 });
-            });
 
-            setTimeout(() => {
-                window.dispatchEvent(new Event('scroll'));
-                revealOnScroll();
-            }, 200);
-        })
-        .catch(error => console.error('Error fetching products:', error));
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('scroll'));
+                    revealOnScroll();
+                }, 200);
+            })
+            .catch(error => console.error('Error fetching products:', error));
+    } // ✅ Closing brace yahan add hua
 });
 
 // --- MOBILE MENU TOGGLE LOGIC ---
@@ -243,7 +247,9 @@ window.removeFromCartPreview = (productId) => {
     cart = cart.filter(item => item._id !== productId);
     localStorage.setItem('cart', JSON.stringify(cart));
     updateCartCount();
-    showToast('Item removed from cart', 'info');
+    if (typeof showToast === 'function') {
+        showToast('Item removed from cart', 'info');
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -324,7 +330,7 @@ window.addEventListener('load', () => {
     }
 });
 
-// ===== ✅ NEW LOGOUT FUNCTION - ADD THIS AT THE END =====
+// ===== ✅ LOGOUT FUNCTION =====
 function logout() {
     // Clear authentication
     localStorage.removeItem('token');

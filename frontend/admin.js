@@ -1,8 +1,8 @@
 const API_URL = 'https://shopease-ecommerce-2ut5.onrender.com/api';
-const token = localStorage.getItem('token');
 
 // Helper function to get headers
 function getHeaders() {
+    const token = localStorage.getItem('token');
     return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -11,14 +11,8 @@ function getHeaders() {
 
 // Predefined Categories
 const categories = [
-    'Electronics',
-    'Fashion',
-    'Home & Garden',
-    'Sports',
-    'Books',
-    'Beauty',
-    'Toys',
-    'Automotive'
+    'Electronics', 'Fashion', 'Home & Garden', 'Sports',
+    'Books', 'Beauty', 'Toys', 'Automotive'
 ];
 
 // Initialize Category Dropdown
@@ -36,76 +30,46 @@ function initCategoryDropdown() {
 }
 
 // 1. Load Products
-async function loadUsers() {
-    const usersList = document.getElementById('admin-users-list');
-    if (!usersList || !token) return;
+function loadProducts() {
+    const productsList = document.getElementById('admin-products-list');
+    if (!productsList) return;
 
-    // ✅ Get current logged-in admin
-    const currentUser = JSON.parse(localStorage.getItem('user'));
+    fetch(`${API_URL}/products`)
+        .then(response => response.json())
+        .then(products => {
+            productsList.innerHTML = '';
+            
+            if (products.length === 0) {
+                productsList.innerHTML = '<p class="empty-text">No products yet.</p>';
+                return;
+            }
 
-    try {
-        const response = await fetch(`${API_URL}/users`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to load users');
-        }
-
-        const users = await response.json();
-
-        if (users.length === 0) {
-            usersList.innerHTML = '<p class="empty-text">No users found.</p>';
-            return;
-        }
-
-        // ✅ Updated rendering logic
-        usersList.innerHTML = `
-            <div class="users-table">
-                <div class="users-table-header">
-                    <span>Name</span>
-                    <span>Email</span>
-                    <span>Role</span>
-                    <span>Joined</span>
-                    <span>Actions</span>
-                </div>
-                ${users.map(user => {
-                    // Check if this is the currently logged-in admin
-                    const isCurrentUser = currentUser && user._id === currentUser._id;
-                    
-                    return `
-                    <div class="users-table-row">
-                        <span><strong>${user.name}</strong></span>
-                        <span>${user.email}</span>
-                        <span>
-                            <span class="badge ${user.role === 'admin' ? 'admin' : 'user'}">
-                                ${user.role} ${isCurrentUser ? '(You)' : ''}
-                            </span>
-                        </span>
-                        <span>${new Date(user.createdAt || Date.now()).toLocaleDateString()}</span>
-                        <span class="user-actions">
-                            <button class="btn-view-user" onclick="viewUserDetails('${user._id}')">
-                                <i class="fas fa-eye"></i> View
-                            </button>
-                            ${!isCurrentUser ? `
-                                <button class="btn-toggle-role" onclick="toggleUserRole('${user._id}', '${user.role}')">
-                                    <i class="fas fa-user-shield"></i>
-                                    ${user.role === 'user' ? 'Make Admin' : 'Make User'}
-                                </button>
-                                <button class="btn-delete-user" onclick="deleteUser('${user._id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            ` : '<span class="info-text">Cannot modify</span>'}
-                        </span>
+            products.forEach(product => {
+                const item = document.createElement('div');
+                item.className = 'admin-product-item';
+                item.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/100'">
+                    <div class="product-info">
+                        <h4>${product.name}</h4>
+                        <p class="product-category"><i class="fas fa-tag"></i> ${product.category}</p>
+                        <p>$${product.price} | Stock: ${product.stock}</p>
                     </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
-    } catch (error) {
-        console.error('Error loading users:', error);
-        usersList.innerHTML = '<p class="error-text">Failed to load users.</p>';
-    }
+                    <div class="product-actions">
+                        <button class="btn-edit" onclick="editProduct('${product._id}', '${product.name}', '${product.description}', ${product.price}, ${product.stock}, '${product.category}', '${product.image}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-delete" onclick="deleteProduct('${product._id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                productsList.appendChild(item);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading products:', error);
+            productsList.innerHTML = '<p class="error-text">Failed to load products</p>';
+        });
 }
 
 // 2. Add or Update Product
@@ -114,6 +78,7 @@ if (productForm) {
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const token = localStorage.getItem('token');
         const id = document.getElementById('product-id').value;
         const productData = {
             name: document.getElementById('name').value.trim(),
@@ -124,28 +89,25 @@ if (productForm) {
             image: document.getElementById('image').value.trim() || 'https://via.placeholder.com/300'
         };
 
-        // Validation
         if (!productData.name || !productData.description || !productData.category) {
-            showToast('Please fill all required fields', 'error');
+            alert('Please fill all required fields');
             return;
         }
 
         if (!token) {
-            showToast('Please login as admin first', 'error');
+            alert('Please login as admin first');
             return;
         }
 
         try {
             let response;
             if (id) {
-                // Update
                 response = await fetch(`${API_URL}/products/${id}`, {
                     method: 'PUT',
                     headers: getHeaders(),
                     body: JSON.stringify(productData)
                 });
             } else {
-                // Create
                 response = await fetch(`${API_URL}/products`, {
                     method: 'POST',
                     headers: getHeaders(),
@@ -153,19 +115,18 @@ if (productForm) {
                 });
             }
 
-            const data = await response.json();
-
             if (response.ok) {
-                showToast(id ? 'Product Updated!' : 'Product Added!', 'success');
+                alert(id ? 'Product Updated!' : 'Product Added!');
                 resetForm();
                 loadProducts();
                 loadAdminStats();
             } else {
-                showToast(data.message || 'Failed. Check admin access!', 'error');
+                const data = await response.json();
+                alert(data.message || 'Failed');
             }
         } catch (error) {
             console.error('Error:', error);
-            showToast('Server error!', 'error');
+            alert('Server error!');
         }
     });
 }
@@ -190,6 +151,7 @@ window.editProduct = (id, name, description, price, stock, category, image) => {
 window.deleteProduct = async (id) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
+    const token = localStorage.getItem('token');
     try {
         const response = await fetch(`${API_URL}/products/${id}`, {
             method: 'DELETE',
@@ -197,23 +159,20 @@ window.deleteProduct = async (id) => {
         });
 
         if (response.ok) {
-            showToast('Product Deleted!', 'success');
+            alert('Product Deleted!');
             loadProducts();
             loadAdminStats();
         } else {
-            showToast('Failed to delete', 'error');
+            alert('Failed to delete');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Server error!', 'error');
     }
 };
 
 // 5. Reset Form
 function resetForm() {
-    if (productForm) {
-        productForm.reset();
-    }
+    if (productForm) productForm.reset();
     document.getElementById('product-id').value = '';
     document.getElementById('form-title').innerText = 'Add New Product';
     document.getElementById('submit-btn').innerText = 'Add Product';
@@ -227,6 +186,7 @@ if (cancelBtn) {
 
 // ===== ADMIN STATS =====
 async function loadAdminStats() {
+    const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -251,7 +211,7 @@ async function loadAdminStats() {
         // Load orders
         await loadOrders();
         
-        // ✅ LOAD USERS
+        // Load users
         await loadUsers();
     } catch (error) {
         console.error('Error loading stats:', error);
@@ -260,6 +220,7 @@ async function loadAdminStats() {
 
 // Load Orders
 async function loadOrders() {
+    const token = localStorage.getItem('token');
     const adminOrdersList = document.getElementById('admin-orders-list');
     if (!adminOrdersList) return;
 
@@ -311,6 +272,7 @@ async function loadOrders() {
 
 // Update Order Status
 window.updateOrderStatus = async (orderId, newStatus) => {
+    const token = localStorage.getItem('token');
     try {
         const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
             method: 'PUT',
@@ -319,19 +281,19 @@ window.updateOrderStatus = async (orderId, newStatus) => {
         });
 
         if (response.ok) {
-            showToast(`Order status updated to ${newStatus}`, 'success');
+            alert(`Order status updated to ${newStatus}`);
             loadAdminStats();
         } else {
-            showToast('Failed to update status', 'error');
+            alert('Failed to update status');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Network error', 'error');
     }
 };
 
 // View Order Details
 window.viewOrderDetails = async (orderId) => {
+    const token = localStorage.getItem('token');
     try {
         const response = await fetch(`${API_URL}/orders/${orderId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -358,7 +320,6 @@ function showOrderModal(order) {
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
             <div class="modal-body">
                 <div class="modal-section">
                     <h3>Customer Information</h3>
@@ -367,7 +328,6 @@ function showOrderModal(order) {
                     <p>${order.customer.phone}</p>
                     <p>${order.customer.address}, ${order.customer.city} - ${order.customer.postalCode}</p>
                 </div>
-                
                 <div class="modal-section">
                     <h3>Items Ordered</h3>
                     ${order.items.map(item => `
@@ -383,7 +343,6 @@ function showOrderModal(order) {
                         </div>
                     `).join('')}
                 </div>
-                
                 <div class="modal-totals">
                     <div class="modal-row">
                         <span>Subtotal:</span>
@@ -398,7 +357,6 @@ function showOrderModal(order) {
                         <span>$${order.totals.total}</span>
                     </div>
                 </div>
-                
                 <div class="modal-footer">
                     <p>Order Date: ${new Date(order.orderDate).toLocaleString()}</p>
                     <p>Status: <span class="status-badge status-${order.status}">${order.status}</span></p>
@@ -406,13 +364,13 @@ function showOrderModal(order) {
             </div>
         </div>
     `;
-
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('show'), 10);
 }
 
-// ===== USER MANAGEMENT - FIXED =====
+// ===== USER MANAGEMENT =====
 async function loadUsers() {
+    const token = localStorage.getItem('token');
     const usersList = document.getElementById('admin-users-list');
     if (!usersList || !token) return;
 
@@ -426,6 +384,7 @@ async function loadUsers() {
         }
 
         const users = await response.json();
+        const currentUser = JSON.parse(localStorage.getItem('user'));
 
         if (users.length === 0) {
             usersList.innerHTML = '<p class="empty-text">No users found.</p>';
@@ -441,13 +400,15 @@ async function loadUsers() {
                     <span>Joined</span>
                     <span>Actions</span>
                 </div>
-                ${users.map(user => `
+                ${users.map(user => {
+                    const isCurrentUser = currentUser && user._id === currentUser._id;
+                    return `
                     <div class="users-table-row">
                         <span><strong>${user.name}</strong></span>
                         <span>${user.email}</span>
                         <span>
                             <span class="badge ${user.role === 'admin' ? 'admin' : 'user'}">
-                                ${user.role}
+                                ${user.role} ${isCurrentUser ? '(You)' : ''}
                             </span>
                         </span>
                         <span>${new Date(user.createdAt || Date.now()).toLocaleDateString()}</span>
@@ -455,7 +416,7 @@ async function loadUsers() {
                             <button class="btn-view-user" onclick="viewUserDetails('${user._id}')">
                                 <i class="fas fa-eye"></i> View
                             </button>
-                            ${user.role !== 'admin' ? `
+                            ${!isCurrentUser ? `
                                 <button class="btn-toggle-role" onclick="toggleUserRole('${user._id}', '${user.role}')">
                                     <i class="fas fa-user-shield"></i>
                                     ${user.role === 'user' ? 'Make Admin' : 'Make User'}
@@ -466,17 +427,19 @@ async function loadUsers() {
                             ` : '<span class="info-text">Cannot modify</span>'}
                         </span>
                     </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
     } catch (error) {
         console.error('Error loading users:', error);
-        usersList.innerHTML = '<p class="error-text">Failed to load users. Make sure you\'re logged in as admin.</p>';
+        usersList.innerHTML = '<p class="error-text">Failed to load users.</p>';
     }
 }
 
 // View User Details
 window.viewUserDetails = async (userId) => {
+    const token = localStorage.getItem('token');
     try {
         const response = await fetch(`${API_URL}/users/${userId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -503,12 +466,9 @@ function showUserModal(user) {
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
             <div class="modal-body">
                 <div class="user-profile-header">
-                    <div class="user-avatar-large">
-                        ${user.name.charAt(0).toUpperCase()}
-                    </div>
+                    <div class="user-avatar-large">${user.name.charAt(0).toUpperCase()}</div>
                     <div>
                         <h3>${user.name}</h3>
                         <p class="badge ${user.role === 'admin' ? 'admin' : 'user'}">
@@ -516,7 +476,6 @@ function showUserModal(user) {
                         </p>
                     </div>
                 </div>
-                
                 <div class="modal-section">
                     <h3>Contact Information</h3>
                     <div class="info-grid">
@@ -533,13 +492,13 @@ function showUserModal(user) {
             </div>
         </div>
     `;
-
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('show'), 10);
 }
 
-// Toggle User Role - USER ↔ ADMIN
+// Toggle User Role
 window.toggleUserRole = async (userId, currentRole) => {
+    const token = localStorage.getItem('token');
     const newRole = currentRole === 'user' ? 'admin' : 'user';
 
     if (!confirm(`Are you sure you want to make this user an ${newRole}?`)) return;
@@ -552,21 +511,21 @@ window.toggleUserRole = async (userId, currentRole) => {
         });
 
         if (response.ok) {
-            showToast(`User role updated to ${newRole}`, 'success');
-            loadUsers(); // Reload users
+            alert(`User role updated to ${newRole}`);
+            loadUsers();
         } else {
             const data = await response.json();
-            showToast(data.message || 'Failed to update role', 'error');
+            alert(data.message || 'Failed to update role');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Network error', 'error');
     }
 };
 
 // Delete User
 window.deleteUser = async (userId) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    const token = localStorage.getItem('token');
+    if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
         const response = await fetch(`${API_URL}/users/${userId}`, {
@@ -575,15 +534,14 @@ window.deleteUser = async (userId) => {
         });
 
         if (response.ok) {
-            showToast('User deleted successfully', 'success');
+            alert('User deleted successfully');
             loadUsers();
             loadAdminStats();
         } else {
-            showToast('Failed to delete user', 'error');
+            alert('Failed to delete user');
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Network error', 'error');
     }
 };
 
@@ -592,5 +550,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initCategoryDropdown();
     loadProducts();
     loadAdminStats();
-    // loadUsers() is called from loadAdminStats()
 });
