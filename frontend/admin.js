@@ -13,12 +13,12 @@ function getHeaders() {
 const categories = [
     'Electronics',
     'Fashion',
-    'Home & Kitchen',
-    'Books',
+    'Home & Garden',
     'Sports',
+    'Books',
     'Beauty',
     'Toys',
-    'Other'
+    'Automotive'
 ];
 
 // Initialize Category Dropdown
@@ -36,45 +36,75 @@ function initCategoryDropdown() {
 }
 
 // 1. Load Products
-async function loadProducts() {
-    const productsList = document.getElementById('admin-products-list');
-    if (!productsList) return;
+async function loadUsers() {
+    const usersList = document.getElementById('admin-users-list');
+    if (!usersList || !token) return;
+
+    // ✅ Get current logged-in admin
+    const currentUser = JSON.parse(localStorage.getItem('user'));
 
     try {
-        const response = await fetch(`${API_URL}/products`);
-        const products = await response.json();
+        const response = await fetch(`${API_URL}/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-        productsList.innerHTML = '';
-        
-        if (products.length === 0) {
-            productsList.innerHTML = '<p class="empty-text">No products yet. Add your first product!</p>';
+        if (!response.ok) {
+            throw new Error('Failed to load users');
+        }
+
+        const users = await response.json();
+
+        if (users.length === 0) {
+            usersList.innerHTML = '<p class="empty-text">No users found.</p>';
             return;
         }
 
-        products.forEach(product => {
-            const item = document.createElement('div');
-            item.className = 'admin-product-item';
-            item.innerHTML = `
-                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/100'">
-                <div class="product-info">
-                    <h4>${product.name}</h4>
-                    <p class="product-category"><i class="fas fa-tag"></i> ${product.category}</p>
-                    <p>$${product.price} | Stock: ${product.stock}</p>
+        // ✅ Updated rendering logic
+        usersList.innerHTML = `
+            <div class="users-table">
+                <div class="users-table-header">
+                    <span>Name</span>
+                    <span>Email</span>
+                    <span>Role</span>
+                    <span>Joined</span>
+                    <span>Actions</span>
                 </div>
-                <div class="product-actions">
-                    <button class="btn-edit" onclick="editProduct('${product._id}', '${product.name}', '${product.description}', ${product.price}, ${product.stock}, '${product.category}', '${product.image}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-delete" onclick="deleteProduct('${product._id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            productsList.appendChild(item);
-        });
+                ${users.map(user => {
+                    // Check if this is the currently logged-in admin
+                    const isCurrentUser = currentUser && user._id === currentUser._id;
+                    
+                    return `
+                    <div class="users-table-row">
+                        <span><strong>${user.name}</strong></span>
+                        <span>${user.email}</span>
+                        <span>
+                            <span class="badge ${user.role === 'admin' ? 'admin' : 'user'}">
+                                ${user.role} ${isCurrentUser ? '(You)' : ''}
+                            </span>
+                        </span>
+                        <span>${new Date(user.createdAt || Date.now()).toLocaleDateString()}</span>
+                        <span class="user-actions">
+                            <button class="btn-view-user" onclick="viewUserDetails('${user._id}')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            ${!isCurrentUser ? `
+                                <button class="btn-toggle-role" onclick="toggleUserRole('${user._id}', '${user.role}')">
+                                    <i class="fas fa-user-shield"></i>
+                                    ${user.role === 'user' ? 'Make Admin' : 'Make User'}
+                                </button>
+                                <button class="btn-delete-user" onclick="deleteUser('${user._id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            ` : '<span class="info-text">Cannot modify</span>'}
+                        </span>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
     } catch (error) {
-        console.error('Error loading products:', error);
-        productsList.innerHTML = '<p class="error-text">Failed to load products</p>';
+        console.error('Error loading users:', error);
+        usersList.innerHTML = '<p class="error-text">Failed to load users.</p>';
     }
 }
 
@@ -83,7 +113,7 @@ const productForm = document.getElementById('product-form');
 if (productForm) {
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const id = document.getElementById('product-id').value;
         const productData = {
             name: document.getElementById('name').value.trim(),
@@ -93,45 +123,38 @@ if (productForm) {
             category: document.getElementById('category').value,
             image: document.getElementById('image').value.trim() || 'https://via.placeholder.com/300'
         };
-        
+
         // Validation
         if (!productData.name || !productData.description || !productData.category) {
             showToast('Please fill all required fields', 'error');
             return;
         }
-        
-        const token = localStorage.getItem('token');
+
         if (!token) {
             showToast('Please login as admin first', 'error');
             return;
         }
-        
+
         try {
             let response;
             if (id) {
-                // Update existing product
+                // Update
                 response = await fetch(`${API_URL}/products/${id}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: getHeaders(),
                     body: JSON.stringify(productData)
                 });
             } else {
-                // Create new product
+                // Create
                 response = await fetch(`${API_URL}/products`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: getHeaders(),
                     body: JSON.stringify(productData)
                 });
             }
-            
+
             const data = await response.json();
-            
+
             if (response.ok) {
                 showToast(id ? 'Product Updated!' : 'Product Added!', 'success');
                 resetForm();
@@ -147,7 +170,7 @@ if (productForm) {
     });
 }
 
-// Edit Product function
+// 3. Edit Product
 window.editProduct = (id, name, description, price, stock, category, image) => {
     document.getElementById('product-id').value = id;
     document.getElementById('name').value = name;
@@ -155,8 +178,8 @@ window.editProduct = (id, name, description, price, stock, category, image) => {
     document.getElementById('price').value = price;
     document.getElementById('stock').value = stock;
     document.getElementById('category').value = category;
-    document.getElementById('image').value = image || ''; // ✅ Default empty string
-    
+    document.getElementById('image').value = image;
+
     document.getElementById('form-title').innerText = 'Edit Product';
     document.getElementById('submit-btn').innerText = 'Update Product';
     document.getElementById('cancel-btn').style.display = 'inline-block';
@@ -227,6 +250,9 @@ async function loadAdminStats() {
 
         // Load orders
         await loadOrders();
+        
+        // ✅ LOAD USERS
+        await loadUsers();
     } catch (error) {
         console.error('Error loading stats:', error);
     }
@@ -385,29 +411,27 @@ function showOrderModal(order) {
     setTimeout(() => modal.classList.add('show'), 10);
 }
 
-// ===== USER MANAGEMENT =====
+// ===== USER MANAGEMENT - FIXED =====
 async function loadUsers() {
-    const token = localStorage.getItem('token');
     const usersList = document.getElementById('admin-users-list');
-    
     if (!usersList || !token) return;
-    
+
     try {
         const response = await fetch(`${API_URL}/users`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to load users');
         }
-        
+
         const users = await response.json();
-        
+
         if (users.length === 0) {
             usersList.innerHTML = '<p class="empty-text">No users found.</p>';
             return;
         }
-        
+
         usersList.innerHTML = `
             <div class="users-table">
                 <div class="users-table-header">
@@ -451,15 +475,13 @@ async function loadUsers() {
     }
 }
 
-// View user details
+// View User Details
 window.viewUserDetails = async (userId) => {
-    const token = localStorage.getItem('token');
-    
     try {
         const response = await fetch(`${API_URL}/users/${userId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
             const user = await response.json();
             showUserModal(user);
@@ -469,86 +491,7 @@ window.viewUserDetails = async (userId) => {
     }
 };
 
-// Toggle user role
-window.toggleUserRole = async (userId, currentRole) => {
-    const token = localStorage.getItem('token');
-    const newRole = currentRole === 'user' ? 'admin' : 'user';
-    
-    if (!confirm(`Are you sure you want to make this user an ${newRole}?`)) return;
-    
-    try {
-        const response = await fetch(`${API_URL}/users/${userId}/role`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ role: newRole })
-        });
-        
-        if (response.ok) {
-            if (typeof showToast === 'function') {
-                showToast(`User role updated to ${newRole}`, 'success');
-            } else {
-                alert(`User role updated to ${newRole}`);
-            }
-            loadUsers();
-        } else {
-            const data = await response.json();
-            if (typeof showToast === 'function') {
-                showToast(data.message || 'Failed to update role', 'error');
-            } else {
-                alert('Failed to update role');
-            }
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        if (typeof showToast === 'function') {
-            showToast('Network error', 'error');
-        } else {
-            alert('Network error');
-        }
-    }
-};
-
-// Delete user
-window.deleteUser = async (userId) => {
-    const token = localStorage.getItem('token');
-    
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    
-    try {
-        const response = await fetch(`${API_URL}/users/${userId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-            if (typeof showToast === 'function') {
-                showToast('User deleted successfully', 'success');
-            } else {
-                alert('User deleted successfully');
-            }
-            loadUsers();
-            loadAdminStats();
-        } else {
-            if (typeof showToast === 'function') {
-                showToast('Failed to delete user', 'error');
-            } else {
-                alert('Failed to delete user');
-            }
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        if (typeof showToast === 'function') {
-            showToast('Network error', 'error');
-        } else {
-            alert('Network error');
-        }
-    }
-};
-
-// Show user modal
+// Show User Modal
 function showUserModal(user) {
     const modal = document.createElement('div');
     modal.className = 'order-modal';
@@ -560,22 +503,94 @@ function showUserModal(user) {
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            
             <div class="modal-body">
-                <h3>${user.name}</h3>
-                <p>Email: ${user.email}</p>
-                <p>Role: <span class="badge ${user.role === 'admin' ? 'admin' : 'user'}">${user.role}</span></p>
-                <p>Joined: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}</p>
+                <div class="user-profile-header">
+                    <div class="user-avatar-large">
+                        ${user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h3>${user.name}</h3>
+                        <p class="badge ${user.role === 'admin' ? 'admin' : 'user'}">
+                            ${user.role === 'admin' ? 'Administrator' : 'Customer'}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="modal-section">
+                    <h3>Contact Information</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>${user.email}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>Joined: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
+
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('show'), 10);
 }
+
+// Toggle User Role - USER ↔ ADMIN
+window.toggleUserRole = async (userId, currentRole) => {
+    const newRole = currentRole === 'user' ? 'admin' : 'user';
+
+    if (!confirm(`Are you sure you want to make this user an ${newRole}?`)) return;
+
+    try {
+        const response = await fetch(`${API_URL}/users/${userId}/role`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify({ role: newRole })
+        });
+
+        if (response.ok) {
+            showToast(`User role updated to ${newRole}`, 'success');
+            loadUsers(); // Reload users
+        } else {
+            const data = await response.json();
+            showToast(data.message || 'Failed to update role', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error', 'error');
+    }
+};
+
+// Delete User
+window.deleteUser = async (userId) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+
+    try {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            showToast('User deleted successfully', 'success');
+            loadUsers();
+            loadAdminStats();
+        } else {
+            showToast('Failed to delete user', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error', 'error');
+    }
+};
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     initCategoryDropdown();
     loadProducts();
     loadAdminStats();
-    loadUsers();
+    // loadUsers() is called from loadAdminStats()
 });
