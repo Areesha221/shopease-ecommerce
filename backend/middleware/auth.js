@@ -1,28 +1,37 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-const verifyToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) {
-        return res.status(403).json({ message: 'No token provided' });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET || 'my_super_secret_key', (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ message: 'Unauthorized' });
+const verifyToken = async (req, res, next) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
         }
-        req.userId = decoded.id;
-        req.userRole = decoded.role;
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Find user and attach to req
+        const user = await User.findById(decoded.id);
+        
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+        
+        req.user = user; // ✅ Yeh line important hai
         next();
-    });
+    } catch (error) {
+        console.error('Token verification error:', error);
+        return res.status(401).json({ message: 'Invalid or expired token' });
+    }
 };
 
-const isAdmin = (req, res, next) => {
-    if (req.userRole !== 'admin') {
-        return res.status(403).json({ message: 'Require Admin Role!' });
+const isAdmin = async (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        return res.status(403).json({ message: 'Admin access required' });
     }
-    next();
 };
 
 module.exports = { verifyToken, isAdmin };

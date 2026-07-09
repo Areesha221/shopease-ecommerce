@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
 const upload = require('./middleware/upload');
 
 // Import Routes
@@ -12,10 +13,13 @@ const orderRoutes = require('./routes/orderRoutes');
 const userRoutes = require('./routes/userRoutes');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['https://shopease-ecommerce-git-main-areesha-projects.vercel.app', 'http://localhost:5500'],
+    credentials: true
+}));
 app.use(express.json());
 
 // Connect Routes
