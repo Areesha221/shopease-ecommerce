@@ -487,14 +487,27 @@ window.toggleUserRole = async (userId, currentRole) => {
         });
         
         if (response.ok) {
-            showToast(`User role updated to ${newRole}`, 'success');
+            if (typeof showToast === 'function') {
+                showToast(`User role updated to ${newRole}`, 'success');
+            } else {
+                alert(`User role updated to ${newRole}`);
+            }
             loadUsers();
         } else {
-            showToast('Failed to update role', 'error');
+            const data = await response.json();
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Failed to update role', 'error');
+            } else {
+                alert('Failed to update role');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Network error', 'error');
+        if (typeof showToast === 'function') {
+            showToast('Network error', 'error');
+        } else {
+            alert('Network error');
+        }
     }
 };
 
@@ -502,7 +515,7 @@ window.toggleUserRole = async (userId, currentRole) => {
 window.deleteUser = async (userId) => {
     const token = localStorage.getItem('token');
     
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
     
     try {
         const response = await fetch(`${API_URL}/users/${userId}`, {
@@ -511,14 +524,27 @@ window.deleteUser = async (userId) => {
         });
         
         if (response.ok) {
-            showToast('User deleted successfully', 'success');
+            if (typeof showToast === 'function') {
+                showToast('User deleted successfully', 'success');
+            } else {
+                alert('User deleted successfully');
+            }
             loadUsers();
+            loadAdminStats();
         } else {
-            showToast('Failed to delete user', 'error');
+            if (typeof showToast === 'function') {
+                showToast('Failed to delete user', 'error');
+            } else {
+                alert('Failed to delete user');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
-        showToast('Network error', 'error');
+        if (typeof showToast === 'function') {
+            showToast('Network error', 'error');
+        } else {
+            alert('Network error');
+        }
     }
 };
 
@@ -537,7 +563,7 @@ function showUserModal(user) {
             <div class="modal-body">
                 <h3>${user.name}</h3>
                 <p>Email: ${user.email}</p>
-                <p>Role: ${user.role}</p>
+                <p>Role: <span class="badge ${user.role === 'admin' ? 'admin' : 'user'}">${user.role}</span></p>
                 <p>Joined: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}</p>
             </div>
         </div>

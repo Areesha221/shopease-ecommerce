@@ -175,36 +175,59 @@ function displayProductDetail(product) {
 }
 
 // Setup quantity controls
+// Setup quantity controls
 function setupQuantityControls() {
     const quantityContainer = document.querySelector('.quantity');
     const quantityInput = document.querySelector('.quantity-input');
 
-    if (quantityContainer && quantityInput) {
-        quantityContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('minus')) {
-                let currentValue = parseInt(quantityInput.value) || 1;
-                if (currentValue > 1) {
-                    quantityInput.value = currentValue - 1;
-                }
-            }
+    if (!quantityContainer || !quantityInput) return;
 
-            if (e.target.classList.contains('plus')) {
-                let currentValue = parseInt(quantityInput.value) || 1;
-                if (product && currentValue < product.stock) {
-                    quantityInput.value = currentValue + 1;
-                } else if (product) {
-                    showToast(`Maximum ${product.stock} items available`, 'warning');
-                }
+    // Remove old listeners by cloning
+    const newContainer = quantityContainer.cloneNode(true);
+    quantityContainer.parentNode.replaceChild(newContainer, quantityContainer);
+
+    const newQuantityInput = newContainer.querySelector('.quantity-input');
+    const minusBtn = newContainer.querySelector('.minus');
+    const plusBtn = newContainer.querySelector('.plus');
+
+    if (minusBtn) {
+        minusBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            let currentValue = parseInt(newQuantityInput.value) || 1;
+            if (currentValue > 1) {
+                newQuantityInput.value = currentValue - 1;
             }
         });
+    }
 
-        quantityInput.addEventListener('change', () => {
-            let val = parseInt(quantityInput.value);
+    if (plusBtn) {
+        plusBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            let currentValue = parseInt(newQuantityInput.value) || 1;
+            if (product && currentValue < product.stock) {
+                newQuantityInput.value = currentValue + 1;
+            } else if (product) {
+                if (typeof showToast === 'function') {
+                    showToast(`Maximum ${product.stock} items available`, 'warning');
+                }
+            } else {
+                newQuantityInput.value = currentValue + 1;
+            }
+        });
+    }
+
+    if (newQuantityInput) {
+        newQuantityInput.addEventListener('change', () => {
+            let val = parseInt(newQuantityInput.value);
             if (isNaN(val) || val < 1) {
-                quantityInput.value = 1;
+                newQuantityInput.value = 1;
             } else if (product && val > product.stock) {
-                quantityInput.value = product.stock;
-                showToast(`Maximum ${product.stock} items available`, 'warning');
+                newQuantityInput.value = product.stock;
+                if (typeof showToast === 'function') {
+                    showToast(`Maximum ${product.stock} items available`, 'warning');
+                }
             }
         });
     }

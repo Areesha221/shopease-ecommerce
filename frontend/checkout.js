@@ -11,67 +11,91 @@ document.addEventListener('DOMContentLoaded', () => {
     let items = [];
     let isBuyNow = false;
 
+    // Handle empty cart
     if (buyNowItem) {
         items = [buyNowItem];
         isBuyNow = true;
     } else if (cart.length > 0) {
         items = cart;
     } else {
-        showToast('Your cart is empty!', 'error');
+        if (typeof showToast === 'function') {
+            showToast('Your cart is empty!', 'error');
+        } else {
+            alert('Your cart is empty!');
+        }
         setTimeout(() => window.location.href = 'products.html', 2000);
         return;
     }
 
+    // Calculate and display items
     let subtotal = 0;
     orderItemsContainer.innerHTML = '';
 
     items.forEach(item => {
-        const quantity = item.quantity || 1;
-        const price = item.price || 0;
+        const quantity = parseInt(item.quantity) || 1;
+        const price = parseFloat(item.price) || 0;
         const itemTotal = price * quantity;
-        subtotal += itemTotal;
+        
+        // ✅ NaN check
+        if (!isNaN(itemTotal)) {
+            subtotal += itemTotal;
+        }
 
         const itemDiv = document.createElement('div');
         itemDiv.className = 'checkout-item';
         itemDiv.innerHTML = `
-        <img src="${item.image}" alt="${item.name}">
-        <div class="checkout-item-info">
-            <h4>${item.name}</h4>
-            <p>Quantity: ${quantity}</p>
-            <p class="item-price">$${price} each</p>
-        </div>
-        <div class="checkout-item-total">
-            <p>$${itemTotal.toFixed(2)}</p>
-        </div>
-    `;
+            <img src="${item.image || 'https://via.placeholder.com/100'}" alt="${item.name || 'Product'}">
+            <div class="checkout-item-info">
+                <h4>${item.name || 'Unknown Product'}</h4>
+                <p>Quantity: ${quantity}</p>
+                <p class="item-price">$${price.toFixed(2)} each</p>
+            </div>
+            <div class="checkout-item-total">
+                <p>$${itemTotal.toFixed(2)}</p>
+            </div>
+        `;
         orderItemsContainer.appendChild(itemDiv);
     });
+
+    // Calculate totals
     const shipping = subtotal > 100 ? 0 : 10;
     const total = subtotal + shipping;
 
-    subtotalElement.innerText = `$${subtotal}`;
-    shippingElement.innerText = shipping === 0 ? 'FREE' : `$${shipping}`;
-    totalElement.innerText = `$${total}`;
+    // ✅ Display with proper formatting
+    subtotalElement.innerText = `$${subtotal.toFixed(2)}`;
+    shippingElement.innerText = shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`;
+    totalElement.innerText = `$${total.toFixed(2)}`;
 
+    // Form submission
     checkoutForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const token = localStorage.getItem('token');
         if (!token) {
-            showToast('Please login to place order', 'error');
+            if (typeof showToast === 'function') {
+                showToast('Please login to place order', 'error');
+            } else {
+                alert('Please login to place order');
+            }
             setTimeout(() => window.location.href = 'login.html', 2000);
             return;
         }
 
         const orderData = {
-            items: items,
+            items: items.map(item => ({
+                _id: item._id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity || 1,
+                image: item.image
+            })),
             customer: {
-                fullName: document.getElementById('fullName').value,
-                email: document.getElementById('email').value,
-                address: document.getElementById('address').value,
-                city: document.getElementById('city').value,
-                postalCode: document.getElementById('postalCode').value,
-                phone: document.getElementById('phone').value
+                fullName: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                postalCode: document.getElementById('postalCode').value.trim(),
+                phone: document.getElementById('phone').value.trim()
             },
             totals: {
                 subtotal: subtotal,
@@ -79,6 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 total: total
             }
         };
+
+        // ✅ Validation
+        if (!orderData.customer.fullName || !orderData.customer.email || !orderData.customer.address) {
+            if (typeof showToast === 'function') {
+                showToast('Please fill all required fields', 'error');
+            } else {
+                alert('Please fill all required fields');
+            }
+            return;
+        }
 
         try {
             const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/orders', {
@@ -100,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.removeItem('cart');
                 }
 
-                // Update cart badge
+                // ✅ Update cart badge
                 if (typeof updateCartCount === 'function') {
                     updateCartCount();
                 }
@@ -109,11 +143,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 showInvoice(order);
             } else {
                 const data = await response.json();
-                showToast(data.message || 'Failed to place order', 'error');
+                if (typeof showToast === 'function') {
+                    showToast(data.message || 'Failed to place order', 'error');
+                } else {
+                    alert(data.message || 'Failed to place order');
+                }
             }
         } catch (error) {
             console.error('Error:', error);
-            showToast('Network error. Please try again.', 'error');
+            if (typeof showToast === 'function') {
+                showToast('Network error. Please try again.', 'error');
+            } else {
+                alert('Network error. Please try again.');
+            }
         }
     });
 });
@@ -143,7 +185,7 @@ function showInvoice(order) {
                     ${order.items.map(item => `
                         <div class="invoice-item">
                             <span>${item.name} x ${item.quantity || 1}</span>
-                            <span>$${(item.price || 0) * (item.quantity || 1)}</span>
+                            <span>$${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</span>
                         </div>
                     `).join('')}
                 </div>
@@ -151,15 +193,15 @@ function showInvoice(order) {
                 <div class="invoice-totals">
                     <div class="invoice-row">
                         <span>Subtotal:</span>
-                        <span>$${order.totals.subtotal}</span>
+                        <span>$${(order.totals.subtotal || 0).toFixed(2)}</span>
                     </div>
                     <div class="invoice-row">
                         <span>Shipping:</span>
-                        <span>${order.totals.shipping === 0 ? 'FREE' : '$' + order.totals.shipping}</span>
+                        <span>${order.totals.shipping === 0 ? 'FREE' : '$' + (order.totals.shipping || 0).toFixed(2)}</span>
                     </div>
                     <div class="invoice-row total">
                         <span>Total Paid:</span>
-                        <span>$${order.totals.total}</span>
+                        <span>$${(order.totals.total || 0).toFixed(2)}</span>
                     </div>
                 </div>
                 
