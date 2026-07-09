@@ -176,13 +176,11 @@ function displayProductDetail(product) {
 
 // Setup quantity controls
 function setupQuantityControls() {
-    // Quantity buttons - Event delegation use karo
     const quantityContainer = document.querySelector('.quantity');
+    const quantityInput = document.querySelector('.quantity-input');
 
-    if (quantityContainer) {
+    if (quantityContainer && quantityInput) {
         quantityContainer.addEventListener('click', (e) => {
-            const quantityInput = document.querySelector('.quantity-input');
-
             if (e.target.classList.contains('minus')) {
                 let currentValue = parseInt(quantityInput.value) || 1;
                 if (currentValue > 1) {
@@ -192,20 +190,24 @@ function setupQuantityControls() {
 
             if (e.target.classList.contains('plus')) {
                 let currentValue = parseInt(quantityInput.value) || 1;
-                quantityInput.value = currentValue + 1;
+                if (product && currentValue < product.stock) {
+                    quantityInput.value = currentValue + 1;
+                } else if (product) {
+                    showToast(`Maximum ${product.stock} items available`, 'warning');
+                }
+            }
+        });
+
+        quantityInput.addEventListener('change', () => {
+            let val = parseInt(quantityInput.value);
+            if (isNaN(val) || val < 1) {
+                quantityInput.value = 1;
+            } else if (product && val > product.stock) {
+                quantityInput.value = product.stock;
+                showToast(`Maximum ${product.stock} items available`, 'warning');
             }
         });
     }
-
-    qtyInput.addEventListener('change', () => {
-        let val = parseInt(qtyInput.value);
-        if (isNaN(val) || val < 1) {
-            qtyInput.value = 1;
-        } else if (product && val > product.stock) {
-            qtyInput.value = product.stock;
-            showToast(`Maximum ${product.stock} items available`, 'warning');
-        }
-    });
 }
 
 // Load related products

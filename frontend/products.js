@@ -17,6 +17,8 @@ const loadingSkeleton = document.getElementById('loading-skeleton');
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     setupEventListeners();
+    updateCartCount();
+    updateWishlistCount();
 });
 
 // Fetch products from backend
@@ -168,7 +170,7 @@ function createProductCard(product) {
             <p class="product-description">${product.description.substring(0, 80)}...</p>
             <div class="product-footer">
                 <div class="product-price">$${product.price}</div>
-                <button class="add-to-cart-btn" onclick="addToCart('${product._id}', '${product.name}', ${product.price}, '${product.image}')">
+                <button class="add-to-cart-btn" onclick="addToCart('${product._id}', '${product.name}', ${product.price}, '${product.image}', ${product.stock})">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
             </div>
@@ -199,25 +201,46 @@ function createProductCard(product) {
     return card;
 }
 
-// Add to Cart function
-window.addToCart = (id, name, price, image) => {
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-    // Check if product already exists in cart
-    const existingProduct = cart.find(item => item._id === id);
-    if (existingProduct) {
-        existingProduct.quantity = (existingProduct.quantity || 1) + 1;
+// Add to Cart function - UPDATED WITH STOCK CHECK
+window.addToCart = (productId, name, price, image, stock) => {
+    let cartData = localStorage.getItem('cart');
+    let cart = [];
+    
+    try {
+        cart = cartData ? JSON.parse(cartData) : [];
+        if (!Array.isArray(cart)) {
+            cart = [];
+        }
+    } catch (error) {
+        console.error('Error parsing cart:', error);
+        cart = [];
+    }
+    
+    const existingItem = cart.find(item => item._id === productId);
+    
+    if (existingItem) {
+        if (existingItem.quantity < stock) {
+            existingItem.quantity += 1;
+            showToast('Quantity updated', 'success');
+        } else {
+            showToast('Maximum stock reached', 'warning');
+            return;
+        }
     } else {
-        cart.push({ _id: id, name, price, image, quantity: 1 });
+        cart.push({
+            _id: productId,
+            name: name,
+            price: price,
+            image: image,
+            quantity: 1
+        });
+        showToast('Product added to cart', 'success');
     }
-
+    
     localStorage.setItem('cart', JSON.stringify(cart));
-
-    // ✅ ONLY UPDATE BADGE (No toast)
-    if (typeof updateCartCount === 'function') {
-        updateCartCount();
-    }
+    updateCartCount();
 };
+
 // Toggle Wishlist - NO TOAST, INSTANT COUNT UPDATE
 window.toggleWishlist = (productId) => {
     let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
@@ -275,12 +298,57 @@ function showLoading(show) {
     }
 }
 
-// Update cart count
+// Update cart count - UPDATED WITH ERROR HANDLING
 function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const cartCount = document.getElementById('cart-count');
+    let cartData = localStorage.getItem('cart');
+    let cart = [];
+    
+    try {
+        cart = cartData ? JSON.parse(cartData) : [];
+        if (!Array.isArray(cart)) {
+            cart = [];
+        }
+    } catch (error) {
+        console.error('Error parsing cart:', error);
+        cart = [];
+    }
+    
+    const totalItems = cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
+    
+    const cartCount = document.querySelector('.cart-count');
     if (cartCount) {
-        cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+        if (totalItems > 0) {
+            cartCount.textContent = totalItems;
+            cartCount.style.display = 'block';
+        } else {
+            cartCount.style.display = 'none';
+        }
+    }
+}
+
+// Update wishlist count - NEW FUNCTION
+function updateWishlistCount() {
+    let wishlistData = localStorage.getItem('wishlist');
+    let wishlist = [];
+    
+    try {
+        wishlist = wishlistData ? JSON.parse(wishlistData) : [];
+        if (!Array.isArray(wishlist)) {
+            wishlist = [];
+        }
+    } catch (error) {
+        console.error('Error parsing wishlist:', error);
+        wishlist = [];
+    }
+    
+    const wishlistCount = document.querySelector('.wishlist-count');
+    if (wishlistCount) {
+        if (wishlist.length > 0) {
+            wishlistCount.textContent = wishlist.length;
+            wishlistCount.style.display = 'block';
+        } else {
+            wishlistCount.style.display = 'none';
+        }
     }
 }
 

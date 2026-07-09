@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NAVBAR LOGIN/LOGOUT LOGIC ---
     const authLink = document.getElementById('auth-link');
     const adminLink = document.getElementById('admin-link');
-    const profileLink = document.querySelector('a[href="profile.html"]')?.parentElement; // Profile link dhundo
-    const ordersLink = document.querySelector('a[href="orders.html"]')?.parentElement;  // Orders link dhundo
+    const profileLink = document.querySelector('a[href="profile.html"]')?.parentElement;
+    const ordersLink = document.querySelector('a[href="orders.html"]')?.parentElement;
 
     const token = localStorage.getItem('token');
     const userString = localStorage.getItem('user');
@@ -21,13 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (profileLink) profileLink.style.display = 'block';
         if (ordersLink) ordersLink.style.display = 'block';
 
-        // 3. Logout Button
+        // 3. Logout Button - UPDATED TO USE NEW FUNCTION
         if (authLink) {
             authLink.innerHTML = `<a href="#" id="logout-btn">Logout (${user.name})</a>`;
             document.getElementById('logout-btn').addEventListener('click', (e) => {
                 e.preventDefault();
-                localStorage.clear();
-                window.location.reload();
+                logout(); // ✅ NEW FUNCTION CALL
             });
         }
     } else {
@@ -38,12 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Fetch products from our backend
     fetch('https://shopease-ecommerce-2ut5.onrender.com/api/products')
-        .then(response => response.json()) // Turn the response into readable JSON
+        .then(response => response.json())
         .then(products => {
-            // 2. Find the empty box we created in HTML
             const container = document.getElementById('products-container');
 
-            // 3. Loop through every product and create a card
             products.forEach(product => {
                 const card = document.createElement('div');
                 card.className = 'product-card reveal';
@@ -60,25 +57,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 container.appendChild(card);
 
-                // Make the "Add to Cart" button work
                 const addToCartBtn = card.querySelector('.add-to-cart');
                 addToCartBtn.addEventListener('click', () => {
-                    // Get existing cart or start a new empty one
                     let cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-                    // Add the product to the cart
                     cart.push(product);
-
-                    // Save it back to the browser's memory
                     localStorage.setItem('cart', JSON.stringify(cart));
-
                     alert(product.name + ' added to cart!');
                 });
             });
 
             setTimeout(() => {
                 window.dispatchEvent(new Event('scroll'));
-                revealOnScroll(); // Directly call bhi karo
+                revealOnScroll();
             }, 200);
         })
         .catch(error => console.error('Error fetching products:', error));
@@ -98,7 +88,6 @@ if (menuToggle) {
 const themeToggle = document.getElementById('theme-toggle');
 const themeIcon = themeToggle ? themeToggle.querySelector('i') : null;
 
-// Check saved theme
 const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 if (themeIcon) {
@@ -119,12 +108,11 @@ if (themeToggle) {
     });
 }
 
-// ===== SCROLL REVEAL ANIMATION (FIXED) =====
+// ===== SCROLL REVEAL ANIMATION =====
 const revealOnScroll = () => {
     const windowHeight = window.innerHeight;
     const elementVisible = 100;
 
-    // Har scroll par FRESH query karo (purane empty variable ki jagah)
     const revealElements = document.querySelectorAll('.reveal');
 
     revealElements.forEach((reveal) => {
@@ -136,7 +124,6 @@ const revealOnScroll = () => {
 };
 
 window.addEventListener('scroll', revealOnScroll);
-// Trigger once on load
 revealOnScroll();
 
 // ===== GLOBAL UPDATE CART COUNT FUNCTION =====
@@ -149,28 +136,23 @@ window.updateCartCount = function() {
 
     if (!cartCountBadge) return;
 
-    // Update badge count
     const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     cartCountBadge.textContent = totalItems;
 
-    // Show/hide badge
     if (totalItems === 0) {
         cartCountBadge.style.display = 'none';
     } else {
         cartCountBadge.style.display = 'block';
-        // Add animation
         cartCountBadge.style.animation = 'none';
         setTimeout(() => {
             cartCountBadge.style.animation = 'badge-pop 0.3s ease';
         }, 10);
     }
 
-    // Update preview
     if (cartPreviewCount) {
         cartPreviewCount.textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''}`;
     }
 
-    // Update preview items
     if (cartPreviewItems) {
         if (cart.length === 0) {
             cartPreviewItems.innerHTML = '<p class="empty-preview">Your cart is empty</p>';
@@ -209,7 +191,6 @@ window.removeFromCartPreview = (productId) => {
     showToast('Item removed from cart', 'info');
 };
 
-// Call this function on every page load
 document.addEventListener('DOMContentLoaded', () => {
     updateCartCount();
 });
@@ -230,7 +211,6 @@ function updateWishlistCount() {
     }
 }
 
-// Call on page load
 document.addEventListener('DOMContentLoaded', () => {
     updateWishlistCount();
 });
@@ -238,14 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== RECENTLY VIEWED PRODUCTS =====
 function addRecentlyViewed(product) {
     let recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
-
-    // Remove if already exists
     recentlyViewed = recentlyViewed.filter(p => p._id !== product._id);
-
-    // Add to beginning
     recentlyViewed.unshift(product);
 
-    // Keep only last 5
     if (recentlyViewed.length > 5) {
         recentlyViewed = recentlyViewed.slice(0, 5);
     }
@@ -288,9 +263,31 @@ function displayRecentlyViewed() {
 window.addEventListener('load', () => {
     const loader = document.getElementById('global-loader');
     if (loader) {
-        // Thoda delay taake smooth lage
         setTimeout(() => {
             loader.classList.remove('active');
         }, 500);
-    }
+    } 
 });
+
+// ===== ✅ NEW LOGOUT FUNCTION - ADD THIS AT THE END =====
+function logout() {
+    // Clear authentication
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // ✅ Clear cart on logout
+    localStorage.removeItem('cart');
+    
+    // Show success message
+    if (typeof showToast === 'function') {
+        showToast('Logged out successfully', 'success');
+    } else {
+        alert('Logged out successfully!');
+    }
+    
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 1000);
+}
+
+window.logout = logout;

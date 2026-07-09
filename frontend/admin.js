@@ -83,7 +83,7 @@ const productForm = document.getElementById('product-form');
 if (productForm) {
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-
+        
         const id = document.getElementById('product-id').value;
         const productData = {
             name: document.getElementById('name').value.trim(),
@@ -93,38 +93,45 @@ if (productForm) {
             category: document.getElementById('category').value,
             image: document.getElementById('image').value.trim() || 'https://via.placeholder.com/300'
         };
-
+        
         // Validation
         if (!productData.name || !productData.description || !productData.category) {
             showToast('Please fill all required fields', 'error');
             return;
         }
-
+        
+        const token = localStorage.getItem('token');
         if (!token) {
             showToast('Please login as admin first', 'error');
             return;
         }
-
+        
         try {
             let response;
             if (id) {
-                // Update
+                // Update existing product
                 response = await fetch(`${API_URL}/products/${id}`, {
                     method: 'PUT',
-                    headers: getHeaders(),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify(productData)
                 });
             } else {
-                // Create
+                // Create new product
                 response = await fetch(`${API_URL}/products`, {
                     method: 'POST',
-                    headers: getHeaders(),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify(productData)
                 });
             }
-
+            
             const data = await response.json();
-
+            
             if (response.ok) {
                 showToast(id ? 'Product Updated!' : 'Product Added!', 'success');
                 resetForm();
@@ -140,7 +147,7 @@ if (productForm) {
     });
 }
 
-// 3. Edit Product
+// Edit Product function
 window.editProduct = (id, name, description, price, stock, category, image) => {
     document.getElementById('product-id').value = id;
     document.getElementById('name').value = name;
@@ -148,8 +155,8 @@ window.editProduct = (id, name, description, price, stock, category, image) => {
     document.getElementById('price').value = price;
     document.getElementById('stock').value = stock;
     document.getElementById('category').value = category;
-    document.getElementById('image').value = image;
-
+    document.getElementById('image').value = image || ''; // ✅ Default empty string
+    
     document.getElementById('form-title').innerText = 'Edit Product';
     document.getElementById('submit-btn').innerText = 'Update Product';
     document.getElementById('cancel-btn').style.display = 'inline-block';
@@ -380,73 +387,79 @@ function showOrderModal(order) {
 
 // ===== USER MANAGEMENT =====
 async function loadUsers() {
+    const token = localStorage.getItem('token');
     const usersList = document.getElementById('admin-users-list');
+    
     if (!usersList || !token) return;
-
+    
     try {
         const response = await fetch(`${API_URL}/users`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-
-        if (response.ok) {
-            const users = await response.json();
-
-            if (users.length === 0) {
-                usersList.innerHTML = '<p class="empty-text">No users found.</p>';
-                return;
-            }
-
-            usersList.innerHTML = `
-                <div class="users-table">
-                    <div class="users-table-header">
-                        <span>Name</span>
-                        <span>Email</span>
-                        <span>Role</span>
-                        <span>Joined</span>
-                        <span>Actions</span>
-                    </div>
-                    ${users.map(user => `
-                        <div class="users-table-row">
-                            <span><strong>${user.name}</strong></span>
-                            <span>${user.email}</span>
-                            <span>
-                                <span class="badge ${user.role === 'admin' ? 'admin' : 'user'}">
-                                    ${user.role}
-                                </span>
-                            </span>
-                            <span>${new Date(user.createdAt || Date.now()).toLocaleDateString()}</span>
-                            <span class="user-actions">
-                                <button class="btn-view-user" onclick="viewUserDetails('${user._id}')">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                                ${user.role !== 'admin' ? `
-                                    <button class="btn-toggle-role" onclick="toggleUserRole('${user._id}', '${user.role}')">
-                                        <i class="fas fa-user-shield"></i>
-                                        ${user.role === 'user' ? 'Make Admin' : 'Make User'}
-                                    </button>
-                                    <button class="btn-delete-user" onclick="deleteUser('${user._id}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                ` : '<span class="info-text">Cannot modify</span>'}
-                            </span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+        
+        if (!response.ok) {
+            throw new Error('Failed to load users');
         }
+        
+        const users = await response.json();
+        
+        if (users.length === 0) {
+            usersList.innerHTML = '<p class="empty-text">No users found.</p>';
+            return;
+        }
+        
+        usersList.innerHTML = `
+            <div class="users-table">
+                <div class="users-table-header">
+                    <span>Name</span>
+                    <span>Email</span>
+                    <span>Role</span>
+                    <span>Joined</span>
+                    <span>Actions</span>
+                </div>
+                ${users.map(user => `
+                    <div class="users-table-row">
+                        <span><strong>${user.name}</strong></span>
+                        <span>${user.email}</span>
+                        <span>
+                            <span class="badge ${user.role === 'admin' ? 'admin' : 'user'}">
+                                ${user.role}
+                            </span>
+                        </span>
+                        <span>${new Date(user.createdAt || Date.now()).toLocaleDateString()}</span>
+                        <span class="user-actions">
+                            <button class="btn-view-user" onclick="viewUserDetails('${user._id}')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            ${user.role !== 'admin' ? `
+                                <button class="btn-toggle-role" onclick="toggleUserRole('${user._id}', '${user.role}')">
+                                    <i class="fas fa-user-shield"></i>
+                                    ${user.role === 'user' ? 'Make Admin' : 'Make User'}
+                                </button>
+                                <button class="btn-delete-user" onclick="deleteUser('${user._id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            ` : '<span class="info-text">Cannot modify</span>'}
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
     } catch (error) {
         console.error('Error loading users:', error);
-        usersList.innerHTML = '<p class="error-text">Failed to load users.</p>';
+        usersList.innerHTML = '<p class="error-text">Failed to load users. Make sure you\'re logged in as admin.</p>';
     }
 }
 
-// View User Details
+// View user details
 window.viewUserDetails = async (userId) => {
+    const token = localStorage.getItem('token');
+    
     try {
         const response = await fetch(`${API_URL}/users/${userId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-
+        
         if (response.ok) {
             const user = await response.json();
             showUserModal(user);
@@ -456,66 +469,23 @@ window.viewUserDetails = async (userId) => {
     }
 };
 
-// Show User Modal
-function showUserModal(user) {
-    const modal = document.createElement('div');
-    modal.className = 'order-modal';
-    modal.innerHTML = `
-        <div class="order-modal-content">
-            <div class="modal-header">
-                <h2>User Details</h2>
-                <button onclick="this.closest('.order-modal').remove()" class="modal-close">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="modal-body">
-                <div class="user-profile-header">
-                    <div class="user-avatar-large">
-                        ${user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <h3>${user.name}</h3>
-                        <p class="badge ${user.role === 'admin' ? 'admin' : 'user'}">
-                            ${user.role === 'admin' ? 'Administrator' : 'Customer'}
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="modal-section">
-                    <h3>Contact Information</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <i class="fas fa-envelope"></i>
-                            <span>${user.email}</span>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-calendar"></i>
-                            <span>Joined: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-    setTimeout(() => modal.classList.add('show'), 10);
-}
-
-// Toggle User Role
+// Toggle user role
 window.toggleUserRole = async (userId, currentRole) => {
+    const token = localStorage.getItem('token');
     const newRole = currentRole === 'user' ? 'admin' : 'user';
-
+    
     if (!confirm(`Are you sure you want to make this user an ${newRole}?`)) return;
-
+    
     try {
         const response = await fetch(`${API_URL}/users/${userId}/role`, {
             method: 'PUT',
-            headers: getHeaders(),
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ role: newRole })
         });
-
+        
         if (response.ok) {
             showToast(`User role updated to ${newRole}`, 'success');
             loadUsers();
@@ -528,20 +498,21 @@ window.toggleUserRole = async (userId, currentRole) => {
     }
 };
 
-// Delete User
+// Delete user
 window.deleteUser = async (userId) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-
+    const token = localStorage.getItem('token');
+    
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
     try {
         const response = await fetch(`${API_URL}/users/${userId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-
+        
         if (response.ok) {
             showToast('User deleted successfully', 'success');
             loadUsers();
-            loadAdminStats();
         } else {
             showToast('Failed to delete user', 'error');
         }
@@ -550,6 +521,30 @@ window.deleteUser = async (userId) => {
         showToast('Network error', 'error');
     }
 };
+
+// Show user modal
+function showUserModal(user) {
+    const modal = document.createElement('div');
+    modal.className = 'order-modal';
+    modal.innerHTML = `
+        <div class="order-modal-content">
+            <div class="modal-header">
+                <h2>User Details</h2>
+                <button onclick="this.closest('.order-modal').remove()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h3>${user.name}</h3>
+                <p>Email: ${user.email}</p>
+                <p>Role: ${user.role}</p>
+                <p>Joined: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('show'), 10);
+}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
