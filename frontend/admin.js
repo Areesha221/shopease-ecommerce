@@ -29,6 +29,40 @@ function initCategoryDropdown() {
     }
 }
 
+// ✅ Image URL Validation
+function isValidImageUrl(url) {
+    if (!url || url.trim() === '') return false;
+    
+    try {
+        new URL(url);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+// ✅ Image Preview Function
+function showImagePreview(imageUrl) {
+    const imageField = document.getElementById('image');
+    let preview = document.getElementById('image-preview-container');
+    
+    if (!preview) {
+        preview = document.createElement('div');
+        preview.id = 'image-preview-container';
+        preview.style.cssText = 'margin-top: 10px; text-align: center;';
+        imageField.parentNode.appendChild(preview);
+    }
+    
+    if (isValidImageUrl(imageUrl)) {
+        preview.innerHTML = `
+            <img src="${imageUrl}" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;" onerror="this.parentElement.innerHTML='<p style=color:red;>Invalid image URL</p>'">
+            <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">Image Preview</p>
+        `;
+    } else {
+        preview.innerHTML = '<p style="color: orange; font-size: 0.9rem;">Please enter a valid image URL</p>';
+    }
+}
+
 // 1. Load Products
 function loadProducts() {
     const productsList = document.getElementById('admin-products-list');
@@ -80,17 +114,42 @@ if (productForm) {
 
         const token = localStorage.getItem('token');
         const id = document.getElementById('product-id').value;
+        
+        // ✅ Get image URL and validate
+        const imageUrl = document.getElementById('image').value.trim();
+        
+        // Validation
+        if (!imageUrl) {
+            alert('Please enter an image URL');
+            return;
+        }
+        
+        if (!isValidImageUrl(imageUrl)) {
+            alert('Please enter a valid image URL (must start with http:// or https://)');
+            return;
+        }
+        
         const productData = {
             name: document.getElementById('name').value.trim(),
             description: document.getElementById('description').value.trim(),
             price: parseFloat(document.getElementById('price').value),
             stock: parseInt(document.getElementById('stock').value),
             category: document.getElementById('category').value,
-            image: document.getElementById('image').value.trim() || 'https://via.placeholder.com/300'
+            image: imageUrl
         };
 
         if (!productData.name || !productData.description || !productData.category) {
             alert('Please fill all required fields');
+            return;
+        }
+
+        if (isNaN(productData.price) || productData.price <= 0) {
+            alert('Please enter a valid price');
+            return;
+        }
+
+        if (isNaN(productData.stock) || productData.stock < 0) {
+            alert('Please enter a valid stock quantity');
             return;
         }
 
@@ -115,19 +174,34 @@ if (productForm) {
                 });
             }
 
+            const data = await response.json();
+
             if (response.ok) {
                 alert(id ? 'Product Updated!' : 'Product Added!');
                 resetForm();
                 loadProducts();
                 loadAdminStats();
             } else {
-                const data = await response.json();
-                alert(data.message || 'Failed');
+                alert(data.message || 'Failed to save product');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Server error!');
+            alert('Server error! Please try again.');
         }
+    });
+}
+
+// ✅ Image field par event listener add karo
+const imageInput = document.getElementById('image');
+if (imageInput) {
+    // Preview show karo jab user URL type kare
+    imageInput.addEventListener('input', (e) => {
+        showImagePreview(e.target.value);
+    });
+    
+    // Preview show karo jab user field se bahar click kare
+    imageInput.addEventListener('blur', (e) => {
+        showImagePreview(e.target.value);
     });
 }
 
@@ -140,6 +214,9 @@ window.editProduct = (id, name, description, price, stock, category, image) => {
     document.getElementById('stock').value = stock;
     document.getElementById('category').value = category;
     document.getElementById('image').value = image;
+
+    // ✅ Show image preview when editing
+    showImagePreview(image);
 
     document.getElementById('form-title').innerText = 'Edit Product';
     document.getElementById('submit-btn').innerText = 'Update Product';
@@ -167,6 +244,7 @@ window.deleteProduct = async (id) => {
         }
     } catch (error) {
         console.error('Error:', error);
+        alert('Server error!');
     }
 };
 
@@ -177,6 +255,12 @@ function resetForm() {
     document.getElementById('form-title').innerText = 'Add New Product';
     document.getElementById('submit-btn').innerText = 'Add Product';
     document.getElementById('cancel-btn').style.display = 'none';
+    
+    // ✅ Clear image preview
+    const preview = document.getElementById('image-preview-container');
+    if (preview) {
+        preview.remove();
+    }
 }
 
 const cancelBtn = document.getElementById('cancel-btn');

@@ -67,7 +67,7 @@
             </div>
         </div>
 
-        <!-- ✅ Users Management Section - ADD THIS -->
+        <!-- Users Management Section -->
         <div class="admin-box">
             <h3>User Management</h3>
             <div id="admin-users-list">
@@ -90,7 +90,7 @@
                     <input type="number" id="price" placeholder="Price" required>
                     <input type="number" id="stock" placeholder="Stock" required>
                 </div>
-                <div class="input-row">
+                <div class="input-group">
                     <select id="category" required>
                         <option value="">Select Category</option>
                         <option value="Electronics">Electronics</option>
@@ -102,8 +102,49 @@
                         <option value="Toys">Toys</option>
                         <option value="Other">Other</option>
                     </select>
-                    <input type="text" id="image" placeholder="Image URL (https://...)" required>
                 </div>
+                
+                <!-- ✅ NEW: Image Upload Section with Tabs -->
+                <div class="image-upload-section">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Product Image</label>
+                    
+                    <div class="upload-tabs">
+                        <button type="button" class="tab-btn active" onclick="switchUploadTab('url')">
+                            <i class="fas fa-link"></i> Use URL
+                        </button>
+                        <button type="button" class="tab-btn" onclick="switchUploadTab('upload')">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload File
+                        </button>
+                    </div>
+                    
+                    <!-- URL Input Tab -->
+                    <div id="url-tab" class="tab-content active">
+                        <input type="text" id="image" placeholder="Image URL (https://...)">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Paste image URL from Unsplash, Imgur, etc.
+                        </small>
+                    </div>
+                    
+                    <!-- File Upload Tab -->
+                    <div id="upload-tab" class="tab-content">
+                        <input type="file" id="image-file" accept="image/*" style="display: none;">
+                        <label for="image-file" class="file-upload-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Choose Image</span>
+                            <small>or drag and drop</small>
+                        </label>
+                        <div id="file-name" class="file-name"></div>
+                        <div id="upload-progress" class="upload-progress" style="display: none;">
+                            <div class="progress-bar"></div>
+                        </div>
+                        <div id="image-preview" class="image-preview"></div>
+                        <input type="hidden" id="uploaded-image-url">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Max file size: 5MB (JPG, PNG, GIF, WebP)
+                        </small>
+                    </div>
+                </div>
+                
                 <button type="submit" class="btn-primary" id="submit-btn">Add Product</button>
                 <button type="button" class="btn-secondary" id="cancel-btn" style="display: none;">Cancel</button>
             </form>
