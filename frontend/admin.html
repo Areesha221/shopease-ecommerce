@@ -1,143 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Admin Dashboard - ShopEase</title>
-        <link
-            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
-            rel="stylesheet">
-        <link rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ShopEase</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-        <nav class="navbar">
-            <div class="logo">Shop<span>Ease</span> <span
-                    style="font-size: 1rem; color: #ffd700;">(Admin)</span></div>
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li id="profile-link" style="display: none;"><a
-                        href="profile.html">Profile</a></li>
-                <li id="orders-link" style="display: none;"><a
-                        href="orders.html">Orders</a></li>
-                <!-- DARK MODE TOGGLE -->
-                <li>
-                    <button id="theme-toggle" class="theme-toggle-btn">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                </li>
-                <li id="auth-link"><a href="login.html">Login</a></li>
-            </ul>
-        </nav>
+    <nav class="navbar">
+        <div class="logo">Shop<span>Ease</span> <span style="font-size: 1rem; color: #ffd700;">(Admin)</span></div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li id="profile-link" style="display: none;"><a href="profile.html">Profile</a></li>
+            <li id="orders-link" style="display: none;"><a href="orders.html">Orders</a></li>
+            <li>
+                <button id="theme-toggle" class="theme-toggle-btn">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </li>
+            <li id="auth-link"><a href="login.html">Login</a></li>
+        </ul>
+    </nav>
 
-        <div class="admin-container">
-            <h2>Admin Dashboard</h2>
+    <div class="admin-container">
+        <h2>Admin Dashboard</h2>
 
-            <div class="admin-stats">
-                <div class="stat-card">
-                    <i class="fas fa-box"></i>
-                    <div>
-                        <h3 id="total-products-count">0</h3>
-                        <p>Total Products</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-shopping-bag"></i>
-                    <div>
-                        <h3 id="total-orders-count">0</h3>
-                        <p>Total Orders</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-users"></i>
-                    <div>
-                        <h3 id="total-users-count">0</h3>
-                        <p>Total Users</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-dollar-sign"></i>
-                    <div>
-                        <h3 id="total-revenue">$0</h3>
-                        <p>Total Revenue</p>
-                    </div>
+        <div class="admin-stats">
+            <div class="stat-card">
+                <i class="fas fa-box"></i>
+                <div>
+                    <h3 id="total-products-count">0</h3>
+                    <p>Total Products</p>
                 </div>
             </div>
-
-            <!-- Users Management Section -->
-            <div class="user-role-form">
-                <select class="role-select" data-user-id="${user._id}">
-                    <option value="user" ${user.role === 'user' ? 'selected' :
-                        ''}>User</option>
-                    <option value="admin" ${user.role === 'admin' ? 'selected' :
-                        ''}>Admin</option>
-                </select>
-                <button class="update-role-btn"
-                    data-user-id="${user._id}">Update</button>
-            </div>
-
-            <!-- Add this after the Manage Products box -->
-            <div class="admin-box">
-                <h3>Recent Orders</h3>
-                <div id="admin-orders-list">
-                    <p>Loading orders...</p>
+            <div class="stat-card">
+                <i class="fas fa-shopping-bag"></i>
+                <div>
+                    <h3 id="total-orders-count">0</h3>
+                    <p>Total Orders</p>
                 </div>
             </div>
-            <!-- Add Product Form -->
-            <div class="admin-box">
-                <h3 id="form-title">Add New Product</h3>
-                <form id="product-form">
-                    <input type="hidden" id="product-id">
-                    <div class="input-group">
-                        <input type="text" id="name" placeholder="Product Name"
-                            required>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="description"
-                            placeholder="Description" required>
-                    </div>
-                    <div class="input-row">
-                        <input type="number" id="price" placeholder="Price"
-                            required>
-                        <input type="number" id="stock" placeholder="Stock"
-                            required>
-                    </div>
-                    <div class="input-row">
-                        <select id="category" required>
-                            <option value>Select Category</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Fashion">Fashion</option>
-                            <option value="Home & Kitchen">Home &
-                                Kitchen</option>
-                            <option value="Books">Books</option>
-                            <option value="Sports">Sports</option>
-                            <option value="Beauty">Beauty</option>
-                            <option value="Toys">Toys</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <input type="text" id="image"
-                            placeholder="Image URL (https://...)" required>
-                    </div>
-                    <button type="submit" class="btn-primary"
-                        id="submit-btn">Add Product</button>
-                    <button type="button" class="btn-secondary" id="cancel-btn"
-                        style="display: none;">Cancel</button>
-                </form>
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <div>
+                    <h3 id="total-users-count">0</h3>
+                    <p>Total Users</p>
+                </div>
             </div>
-
-            <!-- Products List -->
-            <div class="admin-box">
-                <h3>Manage Products</h3>
-                <div id="admin-products-list">
-                    <!-- Products will load here -->
+            <div class="stat-card">
+                <i class="fas fa-dollar-sign"></i>
+                <div>
+                    <h3 id="total-revenue">$0</h3>
+                    <p>Total Revenue</p>
                 </div>
             </div>
         </div>
 
-        <script src="script.js"></script> <!-- For Navbar logic -->
-        <script src="admin.js"></script>
-        <script src="toast.js"></script>
-    </body>
+        <!-- Recent Orders Section -->
+        <div class="admin-box">
+            <h3>Recent Orders</h3>
+            <div id="admin-orders-list">
+                <p>Loading orders...</p>
+            </div>
+        </div>
+
+        <!-- ✅ Users Management Section - ADD THIS -->
+        <div class="admin-box">
+            <h3>User Management</h3>
+            <div id="admin-users-list">
+                <p>Loading users...</p>
+            </div>
+        </div>
+
+        <!-- Add Product Form -->
+        <div class="admin-box">
+            <h3 id="form-title">Add New Product</h3>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="input-group">
+                    <input type="text" id="name" placeholder="Product Name" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="description" placeholder="Description" required>
+                </div>
+                <div class="input-row">
+                    <input type="number" id="price" placeholder="Price" required>
+                    <input type="number" id="stock" placeholder="Stock" required>
+                </div>
+                <div class="input-row">
+                    <select id="category" required>
+                        <option value="">Select Category</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Fashion">Fashion</option>
+                        <option value="Home & Kitchen">Home & Kitchen</option>
+                        <option value="Books">Books</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Beauty">Beauty</option>
+                        <option value="Toys">Toys</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" id="image" placeholder="Image URL (https://...)" required>
+                </div>
+                <button type="submit" class="btn-primary" id="submit-btn">Add Product</button>
+                <button type="button" class="btn-secondary" id="cancel-btn" style="display: none;">Cancel</button>
+            </form>
+        </div>
+
+        <!-- Products List -->
+        <div class="admin-box">
+            <h3>Manage Products</h3>
+            <div id="admin-products-list">
+                <!-- Products will load here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="admin.js"></script>
+    <script src="toast.js"></script>
+</body>
 </html>
