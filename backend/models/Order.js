@@ -4,27 +4,57 @@ const orderSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false  // ✅ false kar do - guest checkout allow karo
     },
     items: [{
-        _id: String,
+        _id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Product'
+        },
         name: String,
         price: Number,
-        image: String,
-        quantity: Number
+        quantity: Number,
+        image: String
     }],
     customer: {
-        fullName: String,
-        email: String,
-        address: String,
-        city: String,
-        postalCode: String,
-        phone: String
+        fullName: {
+            type: String,
+            required: true
+        },
+        email: {
+            type: String,
+            required: true
+        },
+        address: {
+            type: String,
+            required: true
+        },
+        city: {
+            type: String,
+            required: true
+        },
+        postalCode: {
+            type: String,
+            required: true
+        },
+        phone: {
+            type: String,
+            required: true
+        }
     },
     totals: {
-        subtotal: Number,
-        shipping: Number,
-        total: Number
+        subtotal: {
+            type: Number,
+            required: true
+        },
+        shipping: {
+            type: Number,
+            default: 0
+        },
+        total: {
+            type: Number,
+            required: true
+        }
     },
     status: {
         type: String,

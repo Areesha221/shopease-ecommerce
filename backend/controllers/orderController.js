@@ -1,105 +1,176 @@
 const Order = require('../models/Order');
+const Product = require('../models/Product');
 
-// Create new order
+// Create Order
 const createOrder = async (req, res) => {
     try {
         const { items, customer, totals } = req.body;
-        
-        const newOrder = await Order.create({
-            user: req.userId,
+
+        // Validation
+        if (!items || items.length === 0) {
+            return res.status(400).json({ message: 'No items in order' });
+        }
+
+        if (!customer || !customer.fullName || !customer.email) {
+            return res.status(400).json({ message: 'Customer details required' });
+        }
+
+        // ✅ User check - agar login hai toh user attach karo
+        let userId = null;
+        if (req.user && req.user._id) {
+            userId = req.user._id;
+        }
+
+        const order = new Order({
+            user: userId,  // ✅ null bhi allow hoga
             items,
             customer,
-            totals
+            totals,
+            orderDate: new Date(),
+            status: 'pending'
         });
 
-        res.status(201).json(newOrder);
+        await order.save();
+
+        // Update product stock
+        for (const item of items) {
+            if (item._id) {
+                await Product.findByIdAndUpdate(item._id, {
+                    $inc: { stock: -(item.quantity || 1) }
+                });
+            }
+        }
+
+        res.status(201).json({
+            message: 'Order placed successfully',
+            order
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error creating order:', error);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: error.message 
+        });
     }
 };
 
-// Get user's orders
+// Get User Orders
 const getUserOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ user: req.userId }).sort({ orderDate: -1 });
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ message: 'Please login' });
+        }
+
+        const orders = await Order.find({ user: req.user._id })
+            .sort({ orderDate: -1 });
+        
         res.status(200).json(orders);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
-// Get all orders (Admin)
+// Get All Orders (Admin)
 const getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find({}).sort({ orderDate: -1 });
+        const orders = await Order.find({})
+            .populate('user', 'name email')
+            .sort({ orderDate: -1 });
+        
         res.status(200).json(orders);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
-// Get order by ID
+// Get Order by ID
 const getOrderById = async (req, res) => {
     try {
-        const order = await Order.findById(req.params.id);
+        const order = await Order.findById(req.params.id)
+            .populate('user', 'name email');
+        
         if (!order) {
             return res.status(404).json({ message: 'Order not found' });
         }
+
+        // Check if user is authorized
+        if (req.user && order.user && order.user._id.toString() !== req.user._id.toString()) {
+            if (req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'Not authorized' });
+            }
+        }
+
         res.status(200).json(order);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error fetching order:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
-// Update order status (Admin)
+// Update Order Status
 const updateOrderStatus = async (req, res) => {
     try {
         const { status } = req.body;
+        
+        if (!status) {
+            return res.status(400).json({ message: 'Status required' });
+        }
+
         const order = await Order.findByIdAndUpdate(
             req.params.id,
             { status },
             { new: true }
         );
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
         res.status(200).json(order);
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error updating order:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
-// Get admin stats
+// Get Admin Stats
 const getAdminStats = async (req, res) => {
     try {
-        const Product = require('../models/Product');
-        const User = require('../models/User');
+        const totalOrders = await Order.countDocuments();
+        const totalRevenue = await Order.aggregate([
+            { $group: { _id: null, total: { $sum: '$totals.total' } } }
+        ]);
 
         const totalProducts = await Product.countDocuments();
-        const totalOrders = await Order.countDocuments();
-        const totalUsers = await User.countDocuments();
         
-        // ✅ FIX: Only count delivered/processing orders for revenue (not cancelled)
-        const orders = await Order.find({ 
-            status: { $in: ['processing', 'shipped', 'delivered'] } 
-        });
-        const totalRevenue = orders.reduce((sum, order) => sum + (order.totals?.total || 0), 0);
+        // Total users (assuming User model exists)
+        let totalUsers = 0;
+        try {
+            const User = require('../models/User');
+            totalUsers = await User.countDocuments();
+        } catch (error) {
+            console.log('User model not found');
+        }
 
         res.status(200).json({
-            totalProducts,
             totalOrders,
-            totalUsers,
-            totalRevenue
+            totalRevenue: totalRevenue[0]?.total || 0,
+            totalProducts,
+            totalUsers
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error fetching stats:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
-module.exports = { 
-    createOrder, 
-    getUserOrders, 
-    getAllOrders, 
-    getOrderById, 
+module.exports = {
+    createOrder,
+    getUserOrders,
+    getAllOrders,
+    getOrderById,
     updateOrderStatus,
-    getAdminStats 
+    getAdminStats
 };

@@ -17,8 +17,14 @@ const loadingSkeleton = document.getElementById('loading-skeleton');
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     setupEventListeners();
-    updateCartCount();
-    updateWishlistCount();
+    
+    // ✅ Call global functions from script.js
+    if (typeof window.updateCartCount === 'function') {
+        window.updateCartCount();
+    }
+    if (typeof window.updateWishlistCount === 'function') {
+        window.updateWishlistCount();
+    }
 });
 
 // Fetch products from backend
@@ -42,21 +48,13 @@ async function loadProducts() {
 
 // Setup event listeners for filters
 function setupEventListeners() {
-    // Live search
     searchInput.addEventListener('input', debounce(() => {
         applyFilters();
     }, 300));
 
-    // Category filter
     categoryFilter.addEventListener('change', applyFilters);
-
-    // Price filter
     priceFilter.addEventListener('change', applyFilters);
-
-    // Sort filter
     sortFilter.addEventListener('change', applyFilters);
-
-    // Clear all filters
     clearFiltersBtn.addEventListener('click', clearAllFilters);
 }
 
@@ -67,16 +65,12 @@ function applyFilters() {
     const priceRange = priceFilter.value;
     const sortBy = sortFilter.value;
 
-    // Filter products
     filteredProducts = allProducts.filter(product => {
-        // Search filter
         const matchesSearch = product.name.toLowerCase().includes(searchTerm) ||
             product.description.toLowerCase().includes(searchTerm);
 
-        // Category filter
         const matchesCategory = category ? product.category === category : true;
 
-        // Price filter
         let matchesPrice = true;
         if (priceRange) {
             const [min, max] = priceRange.split('-');
@@ -90,10 +84,7 @@ function applyFilters() {
         return matchesSearch && matchesCategory && matchesPrice;
     });
 
-    // Sort products
     sortProducts(sortBy);
-
-    // Display filtered products
     displayProducts(filteredProducts);
     updateResultsCount();
 }
@@ -131,7 +122,6 @@ function displayProducts(products) {
 
     setTimeout(() => {
         window.dispatchEvent(new Event('scroll'));
-        // Manual reveal for newly added cards
         document.querySelectorAll('.reveal').forEach(el => {
             const elementTop = el.getBoundingClientRect().top;
             if (elementTop < window.innerHeight - 100) {
@@ -141,7 +131,7 @@ function displayProducts(products) {
     }, 200);
 }
 
-// Create product card with enhanced features
+// Create product card with quantity controls
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card reveal';
@@ -170,14 +160,21 @@ function createProductCard(product) {
             <p class="product-description">${product.description.substring(0, 80)}...</p>
             <div class="product-footer">
                 <div class="product-price">$${product.price}</div>
-                <button class="add-to-cart-btn" onclick="addToCart('${product._id}', '${product.name}', ${product.price}, '${product.image}', ${product.stock})">
+                
+                <!-- ✅ Quantity Controls -->
+                <div class="quantity-controls">
+                    <button class="qty-btn minus" onclick="changeQuantity('${product._id}', -1, ${product.stock})">-</button>
+                    <input type="number" class="qty-input" id="qty-${product._id}" value="1" min="1" max="${product.stock}" readonly>
+                    <button class="qty-btn plus" onclick="changeQuantity('${product._id}', 1, ${product.stock})">+</button>
+                </div>
+                
+                <button class="add-to-cart-btn" onclick="addToCartWithQuantity('${product._id}', '${product.name}', ${product.price}, '${product.image}', ${product.stock})">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
             </div>
         </div>
     `;
 
-    // Add hover animation
     card.addEventListener('mouseenter', () => {
         card.style.transform = 'translateY(-10px)';
     });
@@ -186,12 +183,11 @@ function createProductCard(product) {
         card.style.transform = 'translateY(0)';
     });
 
-    // Make card clickable for product detail
     card.addEventListener('click', (e) => {
-        // Don't navigate if clicking buttons
         if (e.target.closest('.add-to-cart-btn') ||
             e.target.closest('.wishlist-btn') ||
-            e.target.closest('.quick-view-btn')) return;
+            e.target.closest('.quick-view-btn') ||
+            e.target.closest('.qty-btn')) return;
 
         window.location.href = `product-detail.html?id=${product._id}`;
     });
@@ -201,8 +197,29 @@ function createProductCard(product) {
     return card;
 }
 
-// Add to Cart function - UPDATED WITH STOCK CHECK
-window.addToCart = (productId, name, price, image, stock) => {
+// ✅ Quantity Change Function
+window.changeQuantity = (productId, change, maxStock) => {
+    const input = document.getElementById(`qty-${productId}`);
+    if (!input) return;
+    
+    let currentValue = parseInt(input.value) || 1;
+    let newValue = currentValue + change;
+    
+    if (newValue < 1) {
+        newValue = 1;
+    } else if (newValue > maxStock) {
+        newValue = maxStock;
+        showToast(`Maximum ${maxStock} items available`, 'warning');
+    }
+    
+    input.value = newValue;
+};
+
+// ✅ Add to Cart with Quantity
+window.addToCartWithQuantity = (productId, name, price, image, stock) => {
+    const qtyInput = document.getElementById(`qty-${productId}`);
+    const quantity = qtyInput ? parseInt(qtyInput.value) : 1;
+    
     let cartData = localStorage.getItem('cart');
     let cart = [];
     
@@ -219,11 +236,12 @@ window.addToCart = (productId, name, price, image, stock) => {
     const existingItem = cart.find(item => item._id === productId);
     
     if (existingItem) {
-        if (existingItem.quantity < stock) {
-            existingItem.quantity += 1;
-            showToast('Quantity updated', 'success');
+        const newQuantity = existingItem.quantity + quantity;
+        if (newQuantity <= stock) {
+            existingItem.quantity = newQuantity;
+            showToast(`Quantity updated to ${newQuantity}`, 'success');
         } else {
-            showToast('Maximum stock reached', 'warning');
+            showToast(`Maximum ${stock} items available`, 'warning');
             return;
         }
     } else {
@@ -232,42 +250,44 @@ window.addToCart = (productId, name, price, image, stock) => {
             name: name,
             price: price,
             image: image,
-            quantity: 1
+            quantity: quantity
         });
-        showToast('Product added to cart', 'success');
+        showToast(`${quantity} item${quantity > 1 ? 's' : ''} added to cart`, 'success');
     }
     
     localStorage.setItem('cart', JSON.stringify(cart));
-    updateCartCount();
+    
+    // ✅ Update cart count
+    if (typeof window.updateCartCount === 'function') {
+        window.updateCartCount();
+    }
 };
 
-// Toggle Wishlist - NO TOAST, INSTANT COUNT UPDATE
+// Toggle Wishlist
 window.toggleWishlist = (productId) => {
     let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
     const index = wishlist.indexOf(productId);
 
     if (index > -1) {
         wishlist.splice(index, 1);
-        // Removed from wishlist - update icon
         const btn = document.querySelector(`button[onclick="toggleWishlist('${productId}')"] i`);
         if (btn) btn.className = 'far fa-heart';
     } else {
         wishlist.push(productId);
-        // Added to wishlist - update icon
         const btn = document.querySelector(`button[onclick="toggleWishlist('${productId}')"] i`);
         if (btn) btn.className = 'fas fa-heart';
     }
 
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
 
-    // ✅ INSTANT COUNT UPDATE (No toast)
-    updateWishlistCount();
+    if (typeof window.updateWishlistCount === 'function') {
+        window.updateWishlistCount();
+    }
 };
 
-// Quick View (placeholder for now)
+// Quick View
 window.quickView = (productId) => {
     showToast('Quick View feature coming soon!', 'info');
-    // Later we'll create a modal for this
 };
 
 // Clear all filters
@@ -298,61 +318,7 @@ function showLoading(show) {
     }
 }
 
-// Update cart count - UPDATED WITH ERROR HANDLING
-function updateCartCount() {
-    let cartData = localStorage.getItem('cart');
-    let cart = [];
-    
-    try {
-        cart = cartData ? JSON.parse(cartData) : [];
-        if (!Array.isArray(cart)) {
-            cart = [];
-        }
-    } catch (error) {
-        console.error('Error parsing cart:', error);
-        cart = [];
-    }
-    
-    const totalItems = cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
-    
-    const cartCount = document.querySelector('.cart-count');
-    if (cartCount) {
-        if (totalItems > 0) {
-            cartCount.textContent = totalItems;
-            cartCount.style.display = 'block';
-        } else {
-            cartCount.style.display = 'none';
-        }
-    }
-}
-
-// Update wishlist count - NEW FUNCTION
-function updateWishlistCount() {
-    let wishlistData = localStorage.getItem('wishlist');
-    let wishlist = [];
-    
-    try {
-        wishlist = wishlistData ? JSON.parse(wishlistData) : [];
-        if (!Array.isArray(wishlist)) {
-            wishlist = [];
-        }
-    } catch (error) {
-        console.error('Error parsing wishlist:', error);
-        wishlist = [];
-    }
-    
-    const wishlistCount = document.querySelector('.wishlist-count');
-    if (wishlistCount) {
-        if (wishlist.length > 0) {
-            wishlistCount.textContent = wishlist.length;
-            wishlistCount.style.display = 'block';
-        } else {
-            wishlistCount.style.display = 'none';
-        }
-    }
-}
-
-// Debounce function for search
+// Debounce function
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -365,9 +331,8 @@ function debounce(func, wait) {
     };
 }
 
-// Toast Notification function
+// Toast Notification
 function showToast(message, type = 'success') {
-    // Create toast element
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
@@ -375,13 +340,10 @@ function showToast(message, type = 'success') {
         <span>${message}</span>
     `;
 
-    // Add to body
     document.body.appendChild(toast);
 
-    // Show toast
     setTimeout(() => toast.classList.add('show'), 100);
 
-    // Remove toast after 3 seconds
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
