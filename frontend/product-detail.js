@@ -206,23 +206,31 @@ function displayProductDetail(product) {
 }
 
 // ✅ FIXED: Robust quantity controls setup
+// Setup quantity controls
 function setupQuantityControls() {
     const quantityInput = document.getElementById('quantity');
     
     if (!quantityInput) {
-        console.log('Quantity input not found');
+        console.log('❌ Quantity input not found');
         return;
     }
-
-    console.log('Setting up quantity controls, current value:', quantityInput.value);
+    
+    console.log('✅ Quantity input found, current value:', quantityInput.value);
 
     // Try multiple selectors for minus/plus buttons
-    const minusBtn = document.querySelector('.quantity .minus') || 
-                     document.querySelector('.qty-minus') ||
-                     document.querySelector('[data-action="decrease"]');
-    const plusBtn = document.querySelector('.quantity .plus') || 
-                    document.querySelector('.qty-plus') ||
-                    document.querySelector('[data-action="increase"]');
+    const minusBtn = 
+        document.querySelector('.quantity-controls .minus') ||
+        document.querySelector('.quantity .minus') ||
+        document.querySelector('[onclick*="-1"]') ||
+        quantityInput.previousElementSibling ||
+        null;
+        
+    const plusBtn = 
+        document.querySelector('.quantity-controls .plus') ||
+        document.querySelector('.quantity .plus') ||
+        document.querySelector('[onclick*="+1"]') ||
+        quantityInput.nextElementSibling ||
+        null;
 
     console.log('Minus button:', minusBtn, 'Plus button:', plusBtn);
 
@@ -233,10 +241,12 @@ function setupQuantityControls() {
             let currentValue = parseInt(quantityInput.value) || 1;
             if (currentValue > 1) {
                 quantityInput.value = currentValue - 1;
-                console.log('Decreased to:', quantityInput.value);
+                console.log('➖ Decreased to:', quantityInput.value);
             }
         });
-        console.log('Minus button event listener attached');
+        console.log('✅ Minus button event listener attached');
+    } else {
+        console.log('❌ Minus button not found');
     }
 
     if (plusBtn) {
@@ -246,12 +256,14 @@ function setupQuantityControls() {
             let currentValue = parseInt(quantityInput.value) || 1;
             if (product && currentValue < product.stock) {
                 quantityInput.value = currentValue + 1;
-                console.log('Increased to:', quantityInput.value);
+                console.log('➕ Increased to:', quantityInput.value);
             } else if (product) {
                 showToast(`Maximum ${product.stock} items available`, 'warning');
             }
         });
-        console.log('Plus button event listener attached');
+        console.log('✅ Plus button event listener attached');
+    } else {
+        console.log('❌ Plus button not found');
     }
 
     quantityInput.addEventListener('change', () => {
