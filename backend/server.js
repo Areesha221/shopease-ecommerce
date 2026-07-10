@@ -15,11 +15,14 @@ const userRoutes = require('./routes/userRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Middleware 
 app.use(cors({
-    origin: ['https://shopease-ecommerce-git-main-areesha-projects.vercel.app', 'http://localhost:5500'],
-    credentials: true
+    origin: ['https://shopease-ecommerce-iota.vercel.app', 'https://shopease-ecommerce-git-main-areesha-projects.vercel.app', 'http://localhost:5500'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 // Connect Routes
