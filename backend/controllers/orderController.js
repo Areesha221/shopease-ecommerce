@@ -13,7 +13,6 @@ const createOrder = async (req, res) => {
             return res.status(400).json({ message: 'Customer details required' });
         }
 
-        // ✅ User optional - agar login hai to attach karo
         const order = new Order({
             user: req.user ? req.user._id : null,
             items,
@@ -25,7 +24,10 @@ const createOrder = async (req, res) => {
 
         await order.save();
 
-        // Stock update karo
+        // ✅ Return complete order with all details
+        const savedOrder = await Order.findById(order._id).populate('user', 'name email');
+
+        // Update product stock
         for (const item of items) {
             if (item._id) {
                 await Product.findByIdAndUpdate(item._id, {
@@ -36,7 +38,7 @@ const createOrder = async (req, res) => {
 
         res.status(201).json({
             message: 'Order placed successfully',
-            order
+            order: savedOrder
         });
     } catch (error) {
         console.error('Error creating order:', error);

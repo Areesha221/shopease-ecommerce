@@ -177,27 +177,34 @@ document.addEventListener('DOMContentLoaded', () => {
 function showInvoice(order) {
     const modal = document.createElement('div');
     modal.className = 'invoice-modal';
+    
+    // ✅ Handle different response structures
+    const orderData = order.order || order;
+    const customer = orderData.customer || {};
+    const items = orderData.items || [];
+    const totals = orderData.totals || {};
+    
     modal.innerHTML = `
         <div class="invoice-content">
             <div class="invoice-header">
                 <h2>🎉 Order Confirmed!</h2>
-                <p>Order #${order._id ? order._id.substring(0, 8).toUpperCase() : 'N/A'}</p>
+                <p>Order #${orderData._id ? orderData._id.substring(0, 8).toUpperCase() : 'N/A'}</p>
             </div>
             
             <div class="invoice-body">
                 <div class="invoice-section">
                     <h3>Customer Details</h3>
-                    <p><strong>${order.customer?.fullName || 'N/A'}</strong></p>
-                    <p>${order.customer?.email || 'N/A'}</p>
-                    <p>${order.customer?.address || 'N/A'}, ${order.customer?.city || 'N/A'}</p>
-                    <p>Phone: ${order.customer?.phone || 'N/A'}</p>
+                    <p><strong>${customer.fullName || 'N/A'}</strong></p>
+                    <p>${customer.email || 'N/A'}</p>
+                    <p>${customer.address || 'N/A'}, ${customer.city || 'N/A'}</p>
+                    <p>Phone: ${customer.phone || 'N/A'}</p>
                 </div>
                 
                 <div class="invoice-section">
                     <h3>Items Ordered</h3>
-                    ${order.items && order.items.length > 0 ? order.items.map(item => `
+                    ${items.length > 0 ? items.map(item => `
                         <div class="invoice-item">
-                            <span>${item.name} x ${item.quantity || 1}</span>
+                            <span>${item.name || 'Unknown'} x ${item.quantity || 1}</span>
                             <span>$${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</span>
                         </div>
                     `).join('') : '<p>No items</p>'}
@@ -206,21 +213,21 @@ function showInvoice(order) {
                 <div class="invoice-totals">
                     <div class="invoice-row">
                         <span>Subtotal:</span>
-                        <span>$${(order.totals?.subtotal || 0).toFixed(2)}</span>
+                        <span>$${(totals.subtotal || 0).toFixed(2)}</span>
                     </div>
                     <div class="invoice-row">
                         <span>Shipping:</span>
-                        <span>${order.totals?.shipping === 0 ? 'FREE' : '$' + (order.totals?.shipping || 0).toFixed(2)}</span>
+                        <span>${totals.shipping === 0 ? 'FREE' : '$' + (totals.shipping || 0).toFixed(2)}</span>
                     </div>
                     <div class="invoice-row total">
                         <span>Total Paid:</span>
-                        <span>$${(order.totals?.total || 0).toFixed(2)}</span>
+                        <span>$${(totals.total || 0).toFixed(2)}</span>
                     </div>
                 </div>
                 
                 <div class="invoice-footer">
-                    <p>Order Date: ${order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}</p>
-                    <p>Status: <span class="status-badge">${order.status || 'Processing'}</span></p>
+                    <p>Order Date: ${orderData.orderDate ? new Date(orderData.orderDate).toLocaleDateString() : 'N/A'}</p>
+                    <p>Status: <span class="status-badge">${orderData.status || 'Processing'}</span></p>
                 </div>
             </div>
             

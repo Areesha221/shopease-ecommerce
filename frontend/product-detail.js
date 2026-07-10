@@ -35,20 +35,12 @@ async function loadProductDetail(id) {
         product = await response.json();
         displayProductDetail(product);
         
+        // ✅ Setup quantity controls after DOM is ready
         setTimeout(() => {
             setupQuantityControls();
-        }, 100);
+        }, 200);
         
         loadRelatedProducts(product.category, id);
-        
-        setTimeout(() => {
-            if (typeof window.updateCartCount === 'function') {
-                window.updateCartCount();
-            }
-            if (typeof window.updateWishlistCount === 'function') {
-                window.updateWishlistCount();
-            }
-        }, 200);
     } catch (error) {
         console.error('Error:', error);
         showToast('Failed to load product', 'error');
@@ -202,10 +194,11 @@ function displayProductDetail(product) {
     document.title = `${product.name} - ShopEase`;
 }
 
+// ✅ FIXED: Setup quantity controls
 function setupQuantityControls() {
     const quantityInput = document.getElementById('quantity');
-    const minusBtn = document.querySelector('.minus');
-    const plusBtn = document.querySelector('.plus');
+    const minusBtn = document.querySelector('.quantity .minus');
+    const plusBtn = document.querySelector('.quantity .plus');
 
     if (!quantityInput) {
         console.log('Quantity input not found');
