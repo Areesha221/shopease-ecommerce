@@ -35,10 +35,10 @@ async function loadProductDetail(id) {
         product = await response.json();
         displayProductDetail(product);
         
-        // ✅ Setup quantity controls after DOM is ready
+        // Wait for DOM to be ready
         setTimeout(() => {
             setupQuantityControls();
-        }, 200);
+        }, 300);
         
         loadRelatedProducts(product.category, id);
     } catch (error) {
@@ -48,42 +48,54 @@ async function loadProductDetail(id) {
 }
 
 function displayProductDetail(product) {
-    document.getElementById('breadcrumb-product').textContent = product.name;
-    document.getElementById('main-image').src = product.image;
-    document.getElementById('detail-name').textContent = product.name;
-    document.getElementById('detail-category').textContent = product.category;
-    document.getElementById('detail-price').textContent = `$${product.price}`;
-    document.getElementById('detail-description').textContent = product.description;
+    const breadcrumbProduct = document.getElementById('breadcrumb-product');
+    const mainImage = document.getElementById('main-image');
+    const detailName = document.getElementById('detail-name');
+    const detailCategory = document.getElementById('detail-category');
+    const detailPrice = document.getElementById('detail-price');
+    const detailDescription = document.getElementById('detail-description');
+    const detailOriginalPrice = document.getElementById('detail-original-price');
+    const stockStatus = document.getElementById('stock-status');
+    const btnAddCart = document.getElementById('btn-add-cart');
+    const btnBuyNow = document.querySelector('.btn-buy-now');
+    const btnWishlist = document.getElementById('btn-wishlist');
+    const quantityInput = document.getElementById('quantity');
+
+    if (breadcrumbProduct) breadcrumbProduct.textContent = product.name;
+    if (mainImage) mainImage.src = product.image;
+    if (detailName) detailName.textContent = product.name;
+    if (detailCategory) detailCategory.textContent = product.category;
+    if (detailPrice) detailPrice.textContent = `$${product.price}`;
+    if (detailDescription) detailDescription.textContent = product.description;
 
     const originalPrice = Math.round(product.price * 1.2);
-    document.getElementById('detail-original-price').textContent = `$${originalPrice}`;
+    if (detailOriginalPrice) detailOriginalPrice.textContent = `$${originalPrice}`;
 
-    const stockStatus = document.getElementById('stock-status');
-    if (product.stock > 0) {
-        stockStatus.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i><span>In Stock (${product.stock} available)</span>`;
-    } else {
-        stockStatus.innerHTML = `<i class="fas fa-times-circle" style="color: #dc3545;"></i><span>Out of Stock</span>`;
-        stockStatus.classList.add('out-of-stock');
-        const addCartBtn = document.getElementById('btn-add-cart');
-        const buyNowBtn = document.querySelector('.btn-buy-now');
-        if (addCartBtn) addCartBtn.disabled = true;
-        if (buyNowBtn) buyNowBtn.disabled = true;
+    if (stockStatus) {
+        if (product.stock > 0) {
+            stockStatus.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i><span>In Stock (${product.stock} available)</span>`;
+        } else {
+            stockStatus.innerHTML = `<i class="fas fa-times-circle" style="color: #dc3545;"></i><span>Out of Stock</span>`;
+            stockStatus.classList.add('out-of-stock');
+            if (btnAddCart) btnAddCart.disabled = true;
+            if (btnBuyNow) btnBuyNow.disabled = true;
+        }
     }
 
     document.querySelectorAll('.thumb').forEach(thumb => {
         thumb.src = product.image;
     });
 
+    // Check wishlist status
     let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
     const isInWishlist = wishlist.includes(product._id);
-    const wishlistBtn = document.getElementById('btn-wishlist');
-    if (wishlistBtn) {
-        wishlistBtn.innerHTML = isInWishlist 
+    if (btnWishlist) {
+        btnWishlist.innerHTML = isInWishlist 
             ? '<i class="fas fa-heart" style="color: #ff4d4d;"></i>' 
             : '<i class="far fa-heart"></i>';
     }
 
-    const mainImage = document.getElementById('main-image');
+    // Image zoom
     const zoomContainer = document.querySelector('.image-zoom-container');
     if (zoomContainer && mainImage) {
         zoomContainer.addEventListener('mousemove', (e) => {
@@ -98,13 +110,12 @@ function displayProductDetail(product) {
         });
     }
 
-    const addCartBtn = document.getElementById('btn-add-cart');
-    if (addCartBtn) {
-        addCartBtn.addEventListener('click', () => {
-            const quantityInput = document.getElementById('quantity');
-            const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+    // Add to Cart button
+    if (btnAddCart) {
+        btnAddCart.addEventListener('click', () => {
+            const qty = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
-            if (quantity > product.stock) {
+            if (qty > product.stock) {
                 showToast(`Only ${product.stock} items available`, 'error');
                 return;
             }
@@ -113,7 +124,7 @@ function displayProductDetail(product) {
             const existingItem = cart.find(item => item._id === product._id);
 
             if (existingItem) {
-                const newTotal = (existingItem.quantity || 1) + quantity;
+                const newTotal = (existingItem.quantity || 1) + qty;
                 if (newTotal > product.stock) {
                     showToast(`Cannot add more. Only ${product.stock} items available`, 'error');
                     return;
@@ -126,9 +137,9 @@ function displayProductDetail(product) {
                     name: product.name,
                     price: product.price,
                     image: product.image,
-                    quantity: quantity
+                    quantity: qty
                 });
-                showToast(`${quantity} item${quantity > 1 ? 's' : ''} added to cart`, 'success');
+                showToast(`${qty} item${qty > 1 ? 's' : ''} added to cart`, 'success');
             }
 
             localStorage.setItem('cart', JSON.stringify(cart));
@@ -141,13 +152,12 @@ function displayProductDetail(product) {
         });
     }
 
-    const buyNowBtn = document.querySelector('.btn-buy-now');
-    if (buyNowBtn) {
-        buyNowBtn.addEventListener('click', () => {
-            const quantityInput = document.getElementById('quantity');
-            const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+    // Buy Now button
+    if (btnBuyNow) {
+        btnBuyNow.addEventListener('click', () => {
+            const qty = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
-            if (quantity > product.stock) {
+            if (qty > product.stock) {
                 showToast(`Only ${product.stock} items available`, 'error');
                 return;
             }
@@ -157,7 +167,7 @@ function displayProductDetail(product) {
                 name: product.name,
                 price: product.price,
                 image: product.image,
-                quantity: quantity,
+                quantity: qty,
                 buyNow: true
             };
 
@@ -166,19 +176,20 @@ function displayProductDetail(product) {
         });
     }
 
-    if (wishlistBtn) {
-        wishlistBtn.addEventListener('click', () => {
+    // Wishlist button
+    if (btnWishlist) {
+        btnWishlist.addEventListener('click', () => {
             let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
             const index = wishlist.indexOf(product._id);
 
             if (index > -1) {
                 wishlist.splice(index, 1);
                 showToast('Removed from wishlist', 'info');
-                wishlistBtn.innerHTML = '<i class="far fa-heart"></i>';
+                btnWishlist.innerHTML = '<i class="far fa-heart"></i>';
             } else {
                 wishlist.push(product._id);
                 showToast('Added to wishlist! ❤️', 'success');
-                wishlistBtn.innerHTML = '<i class="fas fa-heart" style="color: #ff4d4d;"></i>';
+                btnWishlist.innerHTML = '<i class="fas fa-heart" style="color: #ff4d4d;"></i>';
             }
 
             localStorage.setItem('wishlist', JSON.stringify(wishlist));
@@ -194,18 +205,26 @@ function displayProductDetail(product) {
     document.title = `${product.name} - ShopEase`;
 }
 
-// ✅ FIXED: Setup quantity controls
+// ✅ FIXED: Robust quantity controls setup
 function setupQuantityControls() {
     const quantityInput = document.getElementById('quantity');
-    const minusBtn = document.querySelector('.quantity .minus');
-    const plusBtn = document.querySelector('.quantity .plus');
-
+    
     if (!quantityInput) {
         console.log('Quantity input not found');
         return;
     }
 
-    console.log('Setting up quantity controls');
+    console.log('Setting up quantity controls, current value:', quantityInput.value);
+
+    // Try multiple selectors for minus/plus buttons
+    const minusBtn = document.querySelector('.quantity .minus') || 
+                     document.querySelector('.qty-minus') ||
+                     document.querySelector('[data-action="decrease"]');
+    const plusBtn = document.querySelector('.quantity .plus') || 
+                    document.querySelector('.qty-plus') ||
+                    document.querySelector('[data-action="increase"]');
+
+    console.log('Minus button:', minusBtn, 'Plus button:', plusBtn);
 
     if (minusBtn) {
         minusBtn.addEventListener('click', (e) => {
@@ -214,8 +233,10 @@ function setupQuantityControls() {
             let currentValue = parseInt(quantityInput.value) || 1;
             if (currentValue > 1) {
                 quantityInput.value = currentValue - 1;
+                console.log('Decreased to:', quantityInput.value);
             }
         });
+        console.log('Minus button event listener attached');
     }
 
     if (plusBtn) {
@@ -225,10 +246,12 @@ function setupQuantityControls() {
             let currentValue = parseInt(quantityInput.value) || 1;
             if (product && currentValue < product.stock) {
                 quantityInput.value = currentValue + 1;
+                console.log('Increased to:', quantityInput.value);
             } else if (product) {
                 showToast(`Maximum ${product.stock} items available`, 'warning');
             }
         });
+        console.log('Plus button event listener attached');
     }
 
     quantityInput.addEventListener('change', () => {
@@ -252,21 +275,21 @@ async function loadRelatedProducts(category, currentId) {
         if (!container) return;
         container.innerHTML = '';
 
-        related.forEach(product => {
+        related.forEach(prod => {
             const card = document.createElement('div');
             card.className = 'product-card';
             card.style.cursor = 'pointer';
             card.innerHTML = `
                 <div class="product-image-container">
-                    <img src="${product.image}" alt="${product.name}" class="product-image">
+                    <img src="${prod.image}" alt="${prod.name}" class="product-image">
                 </div>
                 <div class="card-body">
-                    <h3 class="product-title">${product.name}</h3>
-                    <div class="product-price">$${product.price}</div>
+                    <h3 class="product-title">${prod.name}</h3>
+                    <div class="product-price">$${prod.price}</div>
                 </div>
             `;
             card.addEventListener('click', () => {
-                window.location.href = `product-detail.html?id=${product._id}`;
+                window.location.href = `product-detail.html?id=${prod._id}`;
             });
             container.appendChild(card);
         });
