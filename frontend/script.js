@@ -331,24 +331,19 @@ window.addEventListener('load', () => {
 });
 
 // ===== ✅ LOGOUT FUNCTION =====
-function logout() {
-    // Clear authentication
+// Logout function
+window.logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-
-    // ✅ Clear cart on logout
     localStorage.removeItem('cart');
-
-    // Show success message
+    localStorage.removeItem('wishlist');
+    localStorage.removeItem('buyNowItem');
+    
     if (typeof showToast === 'function') {
         showToast('Logged out successfully', 'success');
-    } else {
-        alert('Logged out successfully!');
     }
-
+    
     setTimeout(() => {
         window.location.href = 'index.html';
     }, 1000);
-}
-
-window.logout = logout;
+};

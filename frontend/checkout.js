@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let items = [];
     let isBuyNow = false;
 
-    // Handle empty cart
     if (buyNowItem) {
         items = [buyNowItem];
         isBuyNow = true;
@@ -27,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Calculate and display items
     let subtotal = 0;
     orderItemsContainer.innerHTML = '';
 
@@ -56,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
         orderItemsContainer.appendChild(itemDiv);
     });
 
-    // Calculate totals
     const shipping = subtotal > 100 ? 0 : 10;
     const total = subtotal + shipping;
 
@@ -83,8 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
             items: items.map(item => ({
                 _id: item._id,
                 name: item.name,
-                price: item.price,
-                quantity: item.quantity || 1,
+                price: parseFloat(item.price),
+                quantity: parseInt(item.quantity) || 1,
                 image: item.image
             })),
             customer: {
@@ -96,13 +93,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 phone: document.getElementById('phone').value.trim()
             },
             totals: {
-                subtotal: subtotal,
-                shipping: shipping,
-                total: total
+                subtotal: parseFloat(subtotal.toFixed(2)),
+                shipping: parseFloat(shipping.toFixed(2)),
+                total: parseFloat(total.toFixed(2))
             }
         };
 
-        if (!orderData.customer.fullName || !orderData.customer.email || !orderData.customer.address) {
+        if (!orderData.customer.fullName || !orderData.customer.email || 
+            !orderData.customer.address || !orderData.customer.city || 
+            !orderData.customer.postalCode || !orderData.customer.phone) {
             if (typeof showToast === 'function') {
                 showToast('Please fill all required fields', 'error');
             } else {
@@ -112,6 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
+            console.log('Sending order:', orderData);
+            
             const response = await fetch('https://shopease-ecommerce-2ut5.onrender.com/api/orders', {
                 method: 'POST',
                 headers: {
@@ -121,9 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(orderData)
             });
 
+            console.log('Response status:', response.status);
+
             if (response.ok) {
                 const order = await response.json();
+                console.log('Order successful:', order);
 
+                // ✅ CLEAR CART - Sirf successful order par
                 if (isBuyNow) {
                     localStorage.removeItem('buyNowItem');
                 } else {
@@ -134,27 +139,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.updateCartCount();
                 }
 
+                if (typeof showToast === 'function') {
+                    showToast('Order placed successfully!', 'success');
+                }
+
                 showInvoice(order);
             } else {
-                const data = await response.json();
-                if (typeof showToast === 'function') {
-                    showToast(data.message || 'Failed to place order', 'error');
-                } else {
-                    alert(data.message || 'Failed to place order');
+                let errorMessage = 'Failed to place order';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                    console.error('Server error:', errorData);
+                } catch (e) {
+                    console.error('Error parsing error response:', e);
                 }
+                
+                if (typeof showToast === 'function') {
+                    showToast(errorMessage, 'error');
+                } else {
+                    alert(errorMessage);
+                }
+                // ❌ Cart clear NAHI hoga
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Network error:', error);
             if (typeof showToast === 'function') {
-                showToast('Network error. Please try again.', 'error');
+                showToast('Network error. Please check your connection and try again.', 'error');
             } else {
-                alert('Network error. Please try again.');
+                alert('Network error. Please check your connection and try again.');
             }
+            //  Cart clear NAHI hoga
         }
     });
 });
 
-// Invoice/Receipt Modal
+// Invoice Modal
 function showInvoice(order) {
     const modal = document.createElement('div');
     modal.className = 'invoice-modal';
@@ -162,46 +181,46 @@ function showInvoice(order) {
         <div class="invoice-content">
             <div class="invoice-header">
                 <h2>🎉 Order Confirmed!</h2>
-                <p>Order #${order._id.substring(0, 8).toUpperCase()}</p>
+                <p>Order #${order._id ? order._id.substring(0, 8).toUpperCase() : 'N/A'}</p>
             </div>
             
             <div class="invoice-body">
                 <div class="invoice-section">
                     <h3>Customer Details</h3>
-                    <p><strong>${order.customer.fullName}</strong></p>
-                    <p>${order.customer.email}</p>
-                    <p>${order.customer.address}, ${order.customer.city}</p>
-                    <p>Phone: ${order.customer.phone}</p>
+                    <p><strong>${order.customer?.fullName || 'N/A'}</strong></p>
+                    <p>${order.customer?.email || 'N/A'}</p>
+                    <p>${order.customer?.address || 'N/A'}, ${order.customer?.city || 'N/A'}</p>
+                    <p>Phone: ${order.customer?.phone || 'N/A'}</p>
                 </div>
                 
                 <div class="invoice-section">
                     <h3>Items Ordered</h3>
-                    ${order.items.map(item => `
+                    ${order.items && order.items.length > 0 ? order.items.map(item => `
                         <div class="invoice-item">
                             <span>${item.name} x ${item.quantity || 1}</span>
                             <span>$${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</span>
                         </div>
-                    `).join('')}
+                    `).join('') : '<p>No items</p>'}
                 </div>
                 
                 <div class="invoice-totals">
                     <div class="invoice-row">
                         <span>Subtotal:</span>
-                        <span>$${(order.totals.subtotal || 0).toFixed(2)}</span>
+                        <span>$${(order.totals?.subtotal || 0).toFixed(2)}</span>
                     </div>
                     <div class="invoice-row">
                         <span>Shipping:</span>
-                        <span>${order.totals.shipping === 0 ? 'FREE' : '$' + (order.totals.shipping || 0).toFixed(2)}</span>
+                        <span>${order.totals?.shipping === 0 ? 'FREE' : '$' + (order.totals?.shipping || 0).toFixed(2)}</span>
                     </div>
                     <div class="invoice-row total">
                         <span>Total Paid:</span>
-                        <span>$${(order.totals.total || 0).toFixed(2)}</span>
+                        <span>$${(order.totals?.total || 0).toFixed(2)}</span>
                     </div>
                 </div>
                 
                 <div class="invoice-footer">
-                    <p>Order Date: ${new Date(order.orderDate).toLocaleDateString()}</p>
-                    <p>Status: <span class="status-badge">Processing</span></p>
+                    <p>Order Date: ${order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}</p>
+                    <p>Status: <span class="status-badge">${order.status || 'Processing'}</span></p>
                 </div>
             </div>
             
