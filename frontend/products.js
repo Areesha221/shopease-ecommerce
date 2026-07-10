@@ -18,13 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     setupEventListeners();
     
-    // ✅ Call global functions from script.js
-    if (typeof window.updateCartCount === 'function') {
-        window.updateCartCount();
-    }
-    if (typeof window.updateWishlistCount === 'function') {
-        window.updateWishlistCount();
-    }
+    // ✅ Update counters after a small delay (taake script.js load ho jaye)
+    setTimeout(() => {
+        if (typeof window.updateCartCount === 'function') {
+            window.updateCartCount();
+        }
+        if (typeof window.updateWishlistCount === 'function') {
+            window.updateWishlistCount();
+        }
+    }, 100);
 });
 
 // Fetch products from backend
@@ -257,10 +259,12 @@ window.addToCartWithQuantity = (productId, name, price, image, stock) => {
     
     localStorage.setItem('cart', JSON.stringify(cart));
     
-    // ✅ Update cart count
-    if (typeof window.updateCartCount === 'function') {
-        window.updateCartCount();
-    }
+    // ✅ Update cart count - call global function
+    setTimeout(() => {
+        if (typeof window.updateCartCount === 'function') {
+            window.updateCartCount();
+        }
+    }, 50);
 };
 
 // Toggle Wishlist
@@ -272,17 +276,22 @@ window.toggleWishlist = (productId) => {
         wishlist.splice(index, 1);
         const btn = document.querySelector(`button[onclick="toggleWishlist('${productId}')"] i`);
         if (btn) btn.className = 'far fa-heart';
+        showToast('Removed from wishlist', 'info');
     } else {
         wishlist.push(productId);
         const btn = document.querySelector(`button[onclick="toggleWishlist('${productId}')"] i`);
         if (btn) btn.className = 'fas fa-heart';
+        showToast('Added to wishlist', 'success');
     }
 
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
 
-    if (typeof window.updateWishlistCount === 'function') {
-        window.updateWishlistCount();
-    }
+    // ✅ Update wishlist count - call global function
+    setTimeout(() => {
+        if (typeof window.updateWishlistCount === 'function') {
+            window.updateWishlistCount();
+        }
+    }, 50);
 };
 
 // Quick View

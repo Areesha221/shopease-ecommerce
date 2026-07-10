@@ -11,7 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     loadProductDetail(productId);
-    setupQuantityControls();
+    
+    // ✅ Update counters after delay
+    setTimeout(() => {
+        if (typeof window.updateCartCount === 'function') {
+            window.updateCartCount();
+        }
+        if (typeof window.updateWishlistCount === 'function') {
+            window.updateWishlistCount();
+        }
+    }, 100);
 });
 
 // Load product details
@@ -64,21 +73,34 @@ function displayProductDetail(product) {
         thumb.src = product.image;
     });
 
+    // ✅ Check if product is already in wishlist
+    let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+    const isInWishlist = wishlist.includes(product._id);
+    const wishlistBtn = document.getElementById('btn-wishlist');
+    
+    if (isInWishlist) {
+        wishlistBtn.innerHTML = '<i class="fas fa-heart" style="color: #ff4d4d;"></i>';
+    } else {
+        wishlistBtn.innerHTML = '<i class="far fa-heart"></i>';
+    }
+
     // Image zoom effect
     const mainImage = document.getElementById('main-image');
     const zoomContainer = document.querySelector('.image-zoom-container');
 
-    zoomContainer.addEventListener('mousemove', (e) => {
-        const rect = zoomContainer.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        mainImage.style.transformOrigin = `${x}% ${y}%`;
-        mainImage.style.transform = 'scale(1.5)';
-    });
+    if (zoomContainer) {
+        zoomContainer.addEventListener('mousemove', (e) => {
+            const rect = zoomContainer.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            mainImage.style.transformOrigin = `${x}% ${y}%`;
+            mainImage.style.transform = 'scale(1.5)';
+        });
 
-    zoomContainer.addEventListener('mouseleave', () => {
-        mainImage.style.transform = 'scale(1)';
-    });
+        zoomContainer.addEventListener('mouseleave', () => {
+            mainImage.style.transform = 'scale(1)';
+        });
+    }
 
     // Add to Cart button
     document.getElementById('btn-add-cart').addEventListener('click', () => {
@@ -102,6 +124,7 @@ function displayProductDetail(product) {
                 return;
             }
             existingItem.quantity = newTotal;
+            showToast(`Quantity updated to ${newTotal}`, 'success');
         } else {
             cart.push({
                 _id: product._id,
@@ -110,14 +133,17 @@ function displayProductDetail(product) {
                 image: product.image,
                 quantity: quantity
             });
+            showToast(`${quantity} item${quantity > 1 ? 's' : ''} added to cart`, 'success');
         }
 
         localStorage.setItem('cart', JSON.stringify(cart));
 
-        // Update cart badge
-        if (typeof updateCartCount === 'function') {
-            updateCartCount();
-        }
+        // ✅ Update cart badge - call global function
+        setTimeout(() => {
+            if (typeof window.updateCartCount === 'function') {
+                window.updateCartCount();
+            }
+        }, 50);
     });
 
     // ✅ BUY NOW BUTTON - FIXED
@@ -164,17 +190,18 @@ function displayProductDetail(product) {
 
         localStorage.setItem('wishlist', JSON.stringify(wishlist));
 
-        // Update wishlist badge
-        if (typeof updateWishlistCount === 'function') {
-            updateWishlistCount();
-        }
+        // ✅ Update wishlist badge - call global function
+        setTimeout(() => {
+            if (typeof window.updateWishlistCount === 'function') {
+                window.updateWishlistCount();
+            }
+        }, 50);
     });
 
     // Page title
     document.title = `${product.name} - ShopEase`;
 }
 
-// Setup quantity controls
 // Setup quantity controls
 function setupQuantityControls() {
     const quantityContainer = document.querySelector('.quantity');
@@ -264,4 +291,23 @@ async function loadRelatedProducts(category, currentId) {
     } catch (error) {
         console.error('Error loading related products:', error);
     }
+}
+
+// Toast Notification
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 100);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }

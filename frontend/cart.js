@@ -1,5 +1,5 @@
-// Cart count update function (Global)
-function updateCartCount() {
+// ✅ Cart count update function (Global - window par attach karo)
+window.updateCartCount = function() {
     let cartData = localStorage.getItem('cart');
     let cart = [];
     
@@ -15,6 +15,7 @@ function updateCartCount() {
     
     const totalItems = cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
     
+    // Navbar cart count
     const cartCount = document.querySelector('.cart-count');
     if (cartCount) {
         if (totalItems > 0) {
@@ -24,7 +25,66 @@ function updateCartCount() {
             cartCount.style.display = 'none';
         }
     }
-}
+    
+    // Cart preview count (agar hai)
+    const cartPreviewCount = document.getElementById('cart-preview-count');
+    if (cartPreviewCount) {
+        cartPreviewCount.textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''}`;
+    }
+    
+    // Cart preview items (agar hai)
+    const cartPreviewItems = document.getElementById('cart-preview-items');
+    const previewTotalPrice = document.getElementById('preview-total-price');
+    
+    if (cartPreviewItems) {
+        if (cart.length === 0) {
+            cartPreviewItems.innerHTML = '<p class="empty-preview">Your cart is empty</p>';
+        } else {
+            let total = 0;
+            cartPreviewItems.innerHTML = cart.map(item => {
+                const itemTotal = (parseFloat(item.price) || 0) * (parseInt(item.quantity) || 1);
+                total += itemTotal;
+                return `
+                    <div class="cart-preview-item">
+                        <img src="${item.image}" alt="${item.name}">
+                        <div class="cart-preview-item-info">
+                            <h5>${item.name}</h5>
+                            <p>$${item.price} x ${item.quantity || 1}</p>
+                        </div>
+                        <button class="cart-preview-item-remove" onclick="removeFromCartPreview('${item._id}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            if (previewTotalPrice) {
+                previewTotalPrice.textContent = `$${total.toFixed(2)}`;
+            }
+        }
+    }
+};
+
+// ✅ Remove from cart preview (Global)
+window.removeFromCartPreview = (productId) => {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    cart = cart.filter(item => item._id !== productId);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    
+    // ✅ Update cart count
+    if (typeof window.updateCartCount === 'function') {
+        window.updateCartCount();
+    }
+    
+    if (typeof showToast === 'function') {
+        showToast('Item removed from cart', 'info');
+    }
+    
+    // Reload if on cart page
+    if (document.getElementById('cart-items')) {
+        window.location.reload();
+    }
+};
 
 // Toast notification function
 function showToast(message, type = 'info') {
@@ -59,13 +119,19 @@ document.addEventListener('DOMContentLoaded', () => {
         cart = [];
     }
 
-    // Update cart count immediately
-    updateCartCount();
+    // ✅ Update cart count immediately
+    if (typeof window.updateCartCount === 'function') {
+        window.updateCartCount();
+    }
 
     // If cart is empty
     if (cart.length === 0) {
-        cartItemsContainer.innerHTML = '<p class="empty-cart">Your cart is empty!</p>';
-        cartTotalElement.innerText = '0';
+        if (cartItemsContainer) {
+            cartItemsContainer.innerHTML = '<p class="empty-cart">Your cart is empty!</p>';
+        }
+        if (cartTotalElement) {
+            cartTotalElement.innerText = '0';
+        }
         return;
     }
 
@@ -104,7 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Update total price
-    cartTotalElement.innerText = total.toFixed(2);
+    if (cartTotalElement) {
+        cartTotalElement.innerText = total.toFixed(2);
+    }
 
     // Make functions global
     window.updateQuantity = (index, change) => {
@@ -135,8 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         localStorage.setItem('cart', JSON.stringify(cart));
         
-        // Update cart count
-        updateCartCount();
+        // ✅ Update cart count
+        if (typeof window.updateCartCount === 'function') {
+            window.updateCartCount();
+        }
         
         // Reload page
         window.location.reload();
@@ -159,8 +229,10 @@ document.addEventListener('DOMContentLoaded', () => {
         cart.splice(index, 1);
         localStorage.setItem('cart', JSON.stringify(cart));
 
-        // Update cart count
-        updateCartCount();
+        // ✅ Update cart count
+        if (typeof window.updateCartCount === 'function') {
+            window.updateCartCount();
+        }
         
         // Reload page
         window.location.reload();
