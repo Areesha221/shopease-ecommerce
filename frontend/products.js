@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     setupEventListeners();
     
-    // ✅ Update counters after a small delay (taake script.js load ho jaye)
+    // ✅ Update counters after a small delay
     setTimeout(() => {
         if (typeof window.updateCartCount === 'function') {
             window.updateCartCount();
@@ -133,7 +133,7 @@ function displayProducts(products) {
     }, 200);
 }
 
-// Create product card with quantity controls
+// Create product card - SIMPLE VERSION (No quantity controls)
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card reveal';
@@ -162,15 +162,7 @@ function createProductCard(product) {
             <p class="product-description">${product.description.substring(0, 80)}...</p>
             <div class="product-footer">
                 <div class="product-price">$${product.price}</div>
-                
-                <!-- ✅ Quantity Controls -->
-                <div class="quantity-controls">
-                    <button class="qty-btn minus" onclick="changeQuantity('${product._id}', -1, ${product.stock})">-</button>
-                    <input type="number" class="qty-input" id="qty-${product._id}" value="1" min="1" max="${product.stock}" readonly>
-                    <button class="qty-btn plus" onclick="changeQuantity('${product._id}', 1, ${product.stock})">+</button>
-                </div>
-                
-                <button class="add-to-cart-btn" onclick="addToCartWithQuantity('${product._id}', '${product.name}', ${product.price}, '${product.image}', ${product.stock})">
+                <button class="add-to-cart-btn" onclick="addToCart('${product._id}', '${product.name}', ${product.price}, '${product.image}', ${product.stock})">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
             </div>
@@ -188,8 +180,7 @@ function createProductCard(product) {
     card.addEventListener('click', (e) => {
         if (e.target.closest('.add-to-cart-btn') ||
             e.target.closest('.wishlist-btn') ||
-            e.target.closest('.quick-view-btn') ||
-            e.target.closest('.qty-btn')) return;
+            e.target.closest('.quick-view-btn')) return;
 
         window.location.href = `product-detail.html?id=${product._id}`;
     });
@@ -199,29 +190,8 @@ function createProductCard(product) {
     return card;
 }
 
-// ✅ Quantity Change Function
-window.changeQuantity = (productId, change, maxStock) => {
-    const input = document.getElementById(`qty-${productId}`);
-    if (!input) return;
-    
-    let currentValue = parseInt(input.value) || 1;
-    let newValue = currentValue + change;
-    
-    if (newValue < 1) {
-        newValue = 1;
-    } else if (newValue > maxStock) {
-        newValue = maxStock;
-        showToast(`Maximum ${maxStock} items available`, 'warning');
-    }
-    
-    input.value = newValue;
-};
-
-// ✅ Add to Cart with Quantity
-window.addToCartWithQuantity = (productId, name, price, image, stock) => {
-    const qtyInput = document.getElementById(`qty-${productId}`);
-    const quantity = qtyInput ? parseInt(qtyInput.value) : 1;
-    
+// ✅ Simple Add to Cart (Products Page Ke Liye)
+window.addToCart = (productId, name, price, image, stock) => {
     let cartData = localStorage.getItem('cart');
     let cart = [];
     
@@ -238,12 +208,11 @@ window.addToCartWithQuantity = (productId, name, price, image, stock) => {
     const existingItem = cart.find(item => item._id === productId);
     
     if (existingItem) {
-        const newQuantity = existingItem.quantity + quantity;
-        if (newQuantity <= stock) {
-            existingItem.quantity = newQuantity;
-            showToast(`Quantity updated to ${newQuantity}`, 'success');
+        if (existingItem.quantity < stock) {
+            existingItem.quantity += 1;
+            showToast('Quantity updated', 'success');
         } else {
-            showToast(`Maximum ${stock} items available`, 'warning');
+            showToast('Maximum stock reached', 'warning');
             return;
         }
     } else {
@@ -252,14 +221,14 @@ window.addToCartWithQuantity = (productId, name, price, image, stock) => {
             name: name,
             price: price,
             image: image,
-            quantity: quantity
+            quantity: 1
         });
-        showToast(`${quantity} item${quantity > 1 ? 's' : ''} added to cart`, 'success');
+        showToast('Product added to cart', 'success');
     }
     
     localStorage.setItem('cart', JSON.stringify(cart));
     
-    // ✅ Update cart count - call global function
+    // ✅ Update cart count
     setTimeout(() => {
         if (typeof window.updateCartCount === 'function') {
             window.updateCartCount();
@@ -286,7 +255,7 @@ window.toggleWishlist = (productId) => {
 
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
 
-    // ✅ Update wishlist count - call global function
+    // ✅ Update wishlist count
     setTimeout(() => {
         if (typeof window.updateWishlistCount === 'function') {
             window.updateWishlistCount();

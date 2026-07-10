@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const price = parseFloat(item.price) || 0;
         const itemTotal = price * quantity;
         
-        // ✅ NaN check
         if (!isNaN(itemTotal)) {
             subtotal += itemTotal;
         }
@@ -61,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const shipping = subtotal > 100 ? 0 : 10;
     const total = subtotal + shipping;
 
-    // ✅ Display with proper formatting
     subtotalElement.innerText = `$${subtotal.toFixed(2)}`;
     shippingElement.innerText = shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`;
     totalElement.innerText = `$${total.toFixed(2)}`;
@@ -104,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // ✅ Validation
         if (!orderData.customer.fullName || !orderData.customer.email || !orderData.customer.address) {
             if (typeof showToast === 'function') {
                 showToast('Please fill all required fields', 'error');
@@ -127,19 +124,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const order = await response.json();
 
-                // ✅ CLEAR CART/BUY NOW
                 if (isBuyNow) {
                     localStorage.removeItem('buyNowItem');
                 } else {
                     localStorage.removeItem('cart');
                 }
 
-                // ✅ Update cart badge
-                if (typeof updateCartCount === 'function') {
-                    updateCartCount();
+                if (typeof window.updateCartCount === 'function') {
+                    window.updateCartCount();
                 }
 
-                // Show invoice
                 showInvoice(order);
             } else {
                 const data = await response.json();
